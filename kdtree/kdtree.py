@@ -35,6 +35,29 @@ class Node(object):
                 self.right_child.add(point, depth+1)
 
 
+    def preorder(self):
+        return ([self.location]              if self.location    else [])+ \
+               (self.left_child.preorder()   if self.left_child  else []) + \
+               (self.right_child.preorder()  if self.right_child else [])
+
+    def inorder(self):
+        return (self.left_child.inorder()    if self.left_child  else []) + \
+               ([self.location]              if self.location    else [])+ \
+               (self.right_child.inorder()   if self.right_child else [])
+
+    def postorder(self):
+        return (self.left_child.postorder()  if self.left_child  else []) + \
+               (self.right_child.postorder() if self.right_child else []) + \
+               ([self.location]              if self.location    else [])
+
+
+    def rebalance(self):
+        """
+        Returns the (possibly new) root of the rebalanced tree
+        """
+        return create(self.inorder())
+
+
     def __repr__(self):
         return '<Node at %s>' % repr(self.location)
 
