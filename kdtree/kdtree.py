@@ -8,10 +8,9 @@ class Node(object):
     def __repr__(self):
         return '<Node at %s>' % repr(self.location)
 
-
-def kdtree(point_list, depth=0):
+def create(point_list=[], depth=0):
     if not point_list:
-        return
+        Node(None, None, None)
 
     # Select axis by cycling through them
     dim = check_dimensionality(point_list)
@@ -22,8 +21,8 @@ def kdtree(point_list, depth=0):
     median = len(point_list) // 2
 
     loc   = point_list[median]
-    left  = kdtree(point_list[:median], depth + 1)
-    right = kdtree(point_list[median + 1:], depth + 1)
+    left  = create(point_list[:median], depth + 1)
+    right = cretae(point_list[median + 1:], depth + 1)
     return Node(loc, left, right)
 
 
