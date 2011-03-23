@@ -58,6 +58,51 @@ class Node(object):
         return create(self.inorder())
 
 
+    def axis_dist(self, point, axis):
+        """
+        Squared distance at the given axis between
+        the current Node and the given point
+        """
+        import math
+        return math.pow(self.location[axis] - point[axis], 2)
+
+
+    def dist(self, point):
+        """
+        Squared distance between the current Node
+        and the given point
+        """
+        r = range(len(self.location))
+        return sum([self.axis_dist(point, i) for i in r])
+
+
+    def search_nn(self, point, best=None, depth=0):
+        """
+        Search the nearest neighbor of the given point
+        """
+
+        if best is None:
+            best = self
+
+        # consider the current node
+        if self.dist(point) < best.dist(point):
+            best = self
+
+        # sort the children, nearer one first
+        children = [self.left_child, self.right_child]
+        children = filter(lambda p: p.location is not None, children)
+        children = sorted(children, key=lambda p: p.dist(point))
+
+        axis = select_axis(len(self.location), depth)
+
+        for child in children:
+            # check if node needs to be recursed
+            if self.axis_dist(point, axis) < best.dist(point):
+                best = child.search_nn(point, best, depth+1)
+
+        return best
+
+
     def __repr__(self):
         return '<Node at %s>' % repr(self.location)
 
