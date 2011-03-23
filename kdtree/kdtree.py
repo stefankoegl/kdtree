@@ -60,7 +60,7 @@ def create(point_list=[], depth=0):
 
     loc   = point_list[median]
     left  = create(point_list[:median], depth + 1)
-    right = cretae(point_list[median + 1:], depth + 1)
+    right = create(point_list[median + 1:], depth + 1)
     return Node(loc, left, right)
 
 
