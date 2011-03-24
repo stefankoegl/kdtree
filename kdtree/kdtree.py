@@ -89,9 +89,7 @@ class Node(object):
             best = self
 
         # sort the children, nearer one first
-        children = [self.left_child, self.right_child]
-        children = filter(lambda p: p.location is not None, children)
-        children = sorted(children, key=lambda p: p.dist(point))
+        children = sorted(self.children(), key=lambda p: p.dist(point))
 
         axis = select_axis(len(self.location), depth)
 
@@ -101,6 +99,45 @@ class Node(object):
                 best = child.search_nn(point, best, depth+1)
 
         return best
+
+
+    def children(self):
+        """
+        Returns an iterator for the non-empty children of the Node
+
+        >>> len(list(create().children()))
+        0
+
+        >>> len(list(create([ (1, 2) ]).children()))
+        0
+
+        >>> len(list(create([ (2, 2), (2, 1), (2, 3) ]).children()))
+        2
+        """
+
+        if self.left_child and self.left_child.location is not None:
+            yield self.left_child
+        if self.right_child and self.right_child.location is not None:
+            yield self.right_child
+
+
+    def height(self):
+        """
+        Returns height of the (sub)tree, without considering
+        empty leaf-nodes
+
+        >>> create().height()
+        0
+
+        >>> create([ (1, 2) ]).height()
+        1
+
+        >>> create([ (1, 2), (2, 3) ]).height()
+        2
+        """
+
+        min_height = int(bool(self.location))
+        return max([min_height] + [c.height()+1 for c in self.children()])
 
 
     def __repr__(self):
