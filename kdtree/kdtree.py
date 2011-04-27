@@ -125,19 +125,41 @@ class Node(object):
 
 
     def preorder(self):
-        return ([self.location]              if self.location    else [])+ \
-               (self.left_child.preorder()   if self.left_child  else []) + \
-               (self.right_child.preorder()  if self.right_child else [])
+        def tmp():
+            yield [self]
+            if self.left_child:
+                yield self.left_child.preorder()
+
+            if self.right_child:
+                yield self.right_child.preorder()
+
+        return chain.from_iterable(tmp())
+
 
     def inorder(self):
-        return (self.left_child.inorder()    if self.left_child  else []) + \
-               ([self.location]              if self.location    else [])+ \
-               (self.right_child.inorder()   if self.right_child else [])
+        def tmp():
+            if self.left_child:
+                yield self.left_child.inorder()
+
+            yield [self]
+
+            if self.right_child:
+                yield self.right_child.inorder()
+
+        return chain.from_iterable(tmp())
+
 
     def postorder(self):
-        return (self.left_child.postorder()  if self.left_child  else []) + \
-               (self.right_child.postorder() if self.right_child else []) + \
-               ([self.location]              if self.location    else [])
+        def tmp():
+            if self.left_child:
+                yield self.left_child.postorder()
+
+            if self.right_child:
+                yield self.right_child.postorder()
+
+            yield [self]
+
+        return chain.from_iterable(tmp())
 
 
     def rebalance(self):
