@@ -4,7 +4,10 @@ from collections import deque
 
 
 class Node(object):
-    """ A Node ina kd-tree """
+    """ A Node in a kd-tree
+
+    A tree is represented by its root node, and every node represents
+    its subtree"""
 
     def __init__(self, location, left_child=None, right_child=None):
         self.location = location
@@ -44,7 +47,7 @@ class Node(object):
     def remove(self, point, depth=0):
         """ Removes the node with the given point from the tree
 
-        Returns the new root node of the tree """
+        Returns the new root node of the (sub)tree """
 
         dim = check_dimensionality([self.location])
         axis = select_axis(dim, depth)
