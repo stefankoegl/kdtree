@@ -339,7 +339,7 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
     in_level  = 0
     level     = 0
 
-    for n, node in enumerate(level_order(tree, include_all=True)):
+    for node in level_order(tree, include_all=True):
 
         if in_level == 0:
             print
