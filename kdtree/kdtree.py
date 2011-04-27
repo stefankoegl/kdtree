@@ -9,7 +9,7 @@ class Node(object):
     A tree is represented by its root node, and every node represents
     its subtree"""
 
-    def __init__(self, location, left_child=None, right_child=None):
+    def __init__(self, location=None, left_child=None, right_child=None):
         self.location = location
         self.left_child = left_child
         self.right_child = right_child
@@ -33,13 +33,13 @@ class Node(object):
 
         if point[axis] < self.location[axis]:
             if self.left_child is None:
-                self.left_child = Node(point, None, None)
+                self.left_child = Node(point)
             else:
                 self.left_child.add(point, depth+1)
 
         else:
             if self.right_child is None:
-                self.right_child = Node(point, None, None)
+                self.right_child = Node(point)
             else:
                 self.right_child.add(point, depth+1)
 
@@ -284,7 +284,7 @@ def create(point_list=[], depth=0):
     """ Creates a kd-tree from a list of points """
 
     if not point_list:
-        return Node(None, None, None)
+        return Node()
 
     dim = check_dimensionality(point_list)
     axis = select_axis(dim, depth)
@@ -322,10 +322,10 @@ def level_order(tree, include_all=False):
         yield node
 
         if include_all or node.left_child:
-            q.append(node.left_child or Node(None))
+            q.append(node.left_child or Node())
 
         if include_all or node.right_child:
-            q.append(node.right_child or Node(None))
+            q.append(node.right_child or Node())
 
 
 
@@ -349,7 +349,7 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
         width = max_width*node_width/per_level
 
         node_str = (str(node.location) if node else '').center(width)
-        print '%8s' % node_str,
+        print node_str,
 
         in_level += 1
 
