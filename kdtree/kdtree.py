@@ -211,13 +211,6 @@ class Node(object):
             yield self.right_child, 1
 
 
-    def get_children(include_all=False):
-        if include_all or self.left_child:
-            yield self.left_child
-        if include_all or self.right_child:
-            yield self.right_child
-
-
     def set_child(self, index, child):
         if index == 0:
             self.left_child = child
