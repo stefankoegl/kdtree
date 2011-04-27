@@ -77,12 +77,7 @@ class Node(object):
                                   self.left_child.right_child
 
             else:
-                # replace self.left_child with its max child
-                max_c, max_p, pos = self.left_child.max_child()
-                tmp = self.left_child
-                self.left_child = max_c
-                max_p.set_child(pos, tmp)
-                max_p.remove(tmp.location)
+                self.left_child = self.left_child.remove(point, depth+1)
 
 
         elif self.right_child and self.right_child.location == point:
@@ -94,12 +89,7 @@ class Node(object):
                                    self.right_child.right_child
 
             else:
-                # replace self.right_child with its min
-                min_c, min_p, pos = self.right_child.min_child()
-                tmp = self.left_child
-                self.left_child = min_c
-                min_p.set_child(pos, tmp)
-                min_p.remove(tmp.location)
+                self.right_child = self.right_child.remove(point, depth+1)
 
 
         elif point[axis] < self.location[axis]:
