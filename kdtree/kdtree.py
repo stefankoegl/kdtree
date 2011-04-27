@@ -35,6 +35,96 @@ class Node(object):
                 self.right_child.add(point, depth+1)
 
 
+    def remove(self, point, depth=0):
+        """ Removes the node with the given point from the tree
+
+        Returns the new root node of the tree """
+
+        dim = check_dimensionality([self.location])
+        axis = select_axis(dim, depth)
+
+
+        if self.location == point:
+            max_c, max_p, pos = self.max_child()
+            root = max_c
+
+            for child, p in self.children:
+                if child is not root:
+                    root.set_child(p, child)
+
+            self.left_child = None
+            self.right_child = None
+
+            root.remove(self.location)
+            return root
+
+
+        if self.left_child and self.left_child.location == point:
+            if self.left_child.is_leaf:
+                self.left_child = None
+
+            elif len(list(self.left_child.children)) == 1:
+                self.left_child = self.left_child.left_child or \
+                                  self.left_child.right_child
+
+            else:
+                # replace self.left_child with its max child
+                max_c, max_p, pos = self.left_child.max_child()
+                tmp = self.left_child
+                self.left_child = max_c
+                max_p.set_child(pos, tmp)
+                max_p.remove(tmp.location)
+
+
+        elif self.right_child and self.right_child.location == point:
+            if self.right_child.is_leaf:
+                self.right_child = None
+
+            elif len(list(self.right_child.children)) == 1:
+                self.right_child = self.right_child.left_child or \
+                                   self.right_child.right_child
+
+            else:
+                # replace self.right_child with its min
+                min_c, min_p, pos = self.right_child.min_child()
+                tmp = self.left_child
+                self.left_child = min_c
+                min_p.set_child(pos, tmp)
+                min_p.remove(tmp.location)
+
+
+        elif point[axis] < self.location[axis]:
+            if self.left_child:
+                self.left_child.remove(point, depth+1)
+
+        elif point[axis] > self.location[axis]:
+            if self.right_child:
+                self.right_child.remove(point, depth+1)
+
+        return self
+
+
+    def max_child(self):
+        """ Returns the maximum child of the subtree and its parent """
+
+        if self.right_child and list(self.right_child.children):
+            return self.right_child.max_child()
+        return (self.right_child, self, 1)
+
+    def min_child(self):
+        """ Returns the minimum child of the subtree and its parent """
+
+        if self.left_child and list(self.left_child.children):
+            return self.left_child.min_child()
+        return (self.left_child, self, 0)
+
+
+    @property
+    def is_leaf(self):
+        return (not self.location) or \
+               (all(not bool(c) for c, p in self.children))
+
+
     def preorder(self):
         return ([self.location]              if self.location    else [])+ \
                (self.left_child.preorder()   if self.left_child  else []) + \
@@ -89,11 +179,11 @@ class Node(object):
             best = self
 
         # sort the children, nearer one first
-        children = sorted(self.children(), key=lambda p: p.dist(point))
+        children = sorted(self.children, key=lambda c, p: c.dist(point))
 
         axis = select_axis(len(self.location), depth)
 
-        for child in children:
+        for child, p in children:
             # check if node needs to be recursed
             if self.axis_dist(point, axis) < best.dist(point):
                 best = child.search_nn(point, best, depth+1)
@@ -101,6 +191,7 @@ class Node(object):
         return best
 
 
+    @property
     def children(self):
         """
         Returns an iterator for the non-empty children of the Node
@@ -116,9 +207,23 @@ class Node(object):
         """
 
         if self.left_child and self.left_child.location is not None:
-            yield self.left_child
+            yield self.left_child, 0
         if self.right_child and self.right_child.location is not None:
+            yield self.right_child, 1
+
+
+    def get_children(include_all=False):
+        if include_all or self.left_child:
+            yield self.left_child
+        if include_all or self.right_child:
             yield self.right_child
+
+
+    def set_child(self, index, child):
+        if index == 0:
+            self.left_child = child
+        else:
+            self.right_hild = child
 
 
     def height(self):
@@ -136,13 +241,22 @@ class Node(object):
         2
         """
 
-        min_height = int(bool(self.location))
-        return max([min_height] + [c.height()+1 for c in self.children()])
+        min_height = int(bool(self))
+        return max([min_height] + [c.height()+1 for c, p in self.children])
 
 
     def __repr__(self):
         return '<Node at %s>' % repr(self.location)
 
+
+    def __nonzero__(self):
+        return self.location is not None
+
+    def __eq__(self, other):
+        if isinstance(other, tuple):
+            return self.location == other
+        else:
+            return super(Node, self).__eq__(other)
 
 
 def select_axis(dimensions, depth):
@@ -153,6 +267,8 @@ def select_axis(dimensions, depth):
 
 
 def create(point_list=[], depth=0):
+    """ Creates a kd-tree from a list of points """
+
     if not point_list:
         return Node(None, None, None)
 
