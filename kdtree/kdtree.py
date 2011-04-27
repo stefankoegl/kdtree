@@ -1,6 +1,12 @@
-class Node(object):
+import math
+from itertools import chain
+from collections import deque
 
-    def __init__(self, location, left_child, right_child):
+
+class Node(object):
+    """ A Node ina kd-tree """
+
+    def __init__(self, location, left_child=None, right_child=None):
         self.location = location
         self.left_child = left_child
         self.right_child = right_child
@@ -292,3 +298,60 @@ def check_dimensionality(point_list):
             raise ValueError('All Points in the point_list must have the same dimensionality')
 
     return dimension
+
+
+
+def level_order(tree, include_all=False):
+    """ Returns an iterator over the tree in level-order
+
+    If include_all is set to True, empty parts of the tree are filled
+    with dummy entries and the iterator becomes infinite. """
+
+    q = deque()
+    q.append(tree)
+    while q:
+        node = q.popleft()
+        yield node
+
+        if include_all or node.left_child:
+            q.append(node.left_child or Node(None))
+
+        if include_all or node.right_child:
+            q.append(node.right_child or Node(None))
+
+
+
+def visualize(tree, max_level=100, node_width=10, left_padding=5):
+    """ Prints the tree to stdout """
+
+    height = min(max_level, tree.height()-1)
+    max_width = pow(2, height)
+
+    per_level = 1
+    in_level  = 0
+    level     = 0
+
+    for n, node in enumerate(level_order(tree, include_all=True)):
+
+        if in_level == 0:
+            print
+            print
+            print ' '*left_padding,
+
+        width = max_width*node_width/per_level
+
+        node_str = (str(node.location) if node else '').center(width)
+        print '%8s' % node_str,
+
+        in_level += 1
+
+        if in_level == per_level:
+            in_level   = 0
+            per_level *= 2
+            level     += 1
+
+        if level > height:
+            break
+
+    print
+    print
