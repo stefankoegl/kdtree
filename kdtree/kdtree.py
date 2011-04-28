@@ -164,7 +164,7 @@ class Node(object):
         """
         Returns the (possibly new) root of the rebalanced tree
         """
-        return create(self.inorder())
+        return create(list(self.inorder()))
 
 
     def axis_dist(self, point, axis):
