@@ -9,205 +9,67 @@ class Node(object):
     A tree is represented by its root node, and every node represents
     its subtree"""
 
-    def __init__(self, location=None, left_child=None, right_child=None):
-        self.location = location
-        self.left_child = left_child
-        self.right_child = right_child
-
-
-    def add(self, point, depth=0):
-        """
-        Adds a point to the current node or recursively
-        descends to one of its children.
-
-        Users should call add() only to the topmost tree node or
-        pass the correct depth if they call for deeper nodes.
-        """
-
-        if self.location is None:
-            self.location = point
-            return
-
-        dim = check_dimensionality([self.location, point])
-        axis = select_axis(dim, depth)
-
-        if point[axis] < self.location[axis]:
-            if self.left_child is None:
-                self.left_child = Node(point)
-            else:
-                self.left_child.add(point, depth+1)
-
-        else:
-            if self.right_child is None:
-                self.right_child = Node(point)
-            else:
-                self.right_child.add(point, depth+1)
-
-
-    def remove(self, point, depth=0):
-        """ Removes the node with the given point from the tree
-
-        Returns the new root node of the (sub)tree """
-
-        dim = check_dimensionality([self.location])
-        axis = select_axis(dim, depth)
-
-
-        if self.location == point:
-            max_c, max_p, pos = self.max_child()
-            root = max_c
-
-            for child, p in self.children:
-                if child is not root:
-                    root.set_child(p, child)
-
-            self.left_child = None
-            self.right_child = None
-
-            root.remove(self.location)
-            return root
-
-
-        if self.left_child and self.left_child.location == point:
-            if self.left_child.is_leaf:
-                self.left_child = None
-
-            elif len(list(self.left_child.children)) == 1:
-                self.left_child = self.left_child.left_child or \
-                                  self.left_child.right_child
-
-            else:
-                self.left_child = self.left_child.remove(point, depth+1)
-
-
-        elif self.right_child and self.right_child.location == point:
-            if self.right_child.is_leaf:
-                self.right_child = None
-
-            elif len(list(self.right_child.children)) == 1:
-                self.right_child = self.right_child.left_child or \
-                                   self.right_child.right_child
-
-            else:
-                self.right_child = self.right_child.remove(point, depth+1)
-
-
-        elif point[axis] < self.location[axis]:
-            if self.left_child:
-                self.left_child.remove(point, depth+1)
-
-        elif point[axis] > self.location[axis]:
-            if self.right_child:
-                self.right_child.remove(point, depth+1)
-
-        return self
+    def __init__(self, data=None, left=None, right=None):
+        self.data = data
+        self.left = left
+        self.right = right
 
 
     def max_child(self):
         """ Returns the maximum child of the subtree and its parent """
 
-        if self.right_child and list(self.right_child.children):
-            return self.right_child.max_child()
-        return (self.right_child, self, 1)
+        if self.right and list(self.right.children):
+            return self.right.max_child()
+        return (self.right, self, 1)
 
     def min_child(self):
         """ Returns the minimum child of the subtree and its parent """
 
-        if self.left_child and list(self.left_child.children):
-            return self.left_child.min_child()
-        return (self.left_child, self, 0)
+        if self.left and list(self.left.children):
+            return self.left.min_child()
+        return (self.left, self, 0)
 
 
     @property
     def is_leaf(self):
-        return (not self.location) or \
+        return (not self.data) or \
                (all(not bool(c) for c, p in self.children))
 
 
     def preorder(self):
         yield self
 
-        if self.left_child:
-            for x in self.left_child.preorder():
+        if self.left:
+            for x in self.left.preorder():
                 yield x
 
-        if self.right_child:
-            for x in self.right_child.preorder():
+        if self.right:
+            for x in self.right.preorder():
                 yield x
 
 
     def inorder(self):
-        if self.left_child:
-            for x in self.left_child.inorder():
+        if self.left:
+            for x in self.left.inorder():
                 yield x
 
         yield self
 
-        if self.right_child:
-            for x in self.right_child.inorder():
+        if self.right:
+            for x in self.right.inorder():
                 yield x
 
 
     def postorder(self):
-        if self.left_child:
-            for x in self.left_child.postorder():
+        if self.left:
+            for x in self.left.postorder():
                 yield x
 
-        if self.right_child:
-            for x in self.right_child.postorder():
+        if self.right:
+            for x in self.right.postorder():
                 yield x
 
         yield self
-
-
-    def rebalance(self):
-        """
-        Returns the (possibly new) root of the rebalanced tree
-        """
-        return create(list(self.inorder()))
-
-
-    def axis_dist(self, point, axis):
-        """
-        Squared distance at the given axis between
-        the current Node and the given point
-        """
-        import math
-        return math.pow(self.location[axis] - point[axis], 2)
-
-
-    def dist(self, point):
-        """
-        Squared distance between the current Node
-        and the given point
-        """
-        r = range(len(self.location))
-        return sum([self.axis_dist(point, i) for i in r])
-
-
-    def search_nn(self, point, best=None, depth=0):
-        """
-        Search the nearest neighbor of the given point
-        """
-
-        if best is None:
-            best = self
-
-        # consider the current node
-        if self.dist(point) < best.dist(point):
-            best = self
-
-        # sort the children, nearer one first
-        children = sorted(self.children, key=lambda c, p: c.dist(point))
-
-        axis = select_axis(len(self.location), depth)
-
-        for child, p in children:
-            # check if node needs to be recursed
-            if self.axis_dist(point, axis) < best.dist(point):
-                best = child.search_nn(point, best, depth+1)
-
-        return best
 
 
     @property
@@ -225,15 +87,15 @@ class Node(object):
         2
         """
 
-        if self.left_child and self.left_child.location is not None:
-            yield self.left_child, 0
-        if self.right_child and self.right_child.location is not None:
-            yield self.right_child, 1
+        if self.left and self.left.data is not None:
+            yield self.left, 0
+        if self.right and self.right.data is not None:
+            yield self.right, 1
 
 
     def set_child(self, index, child):
         if index == 0:
-            self.left_child = child
+            self.left = child
         else:
             self.right_hild = child
 
@@ -258,17 +120,160 @@ class Node(object):
 
 
     def __repr__(self):
-        return '<Node at %s>' % repr(self.location)
+        return '<%(cls)s - %(data)s>' % \
+            dict(cls=self.__class__.__name__, data=repr(self.data))
 
 
     def __nonzero__(self):
-        return self.location is not None
+        return self.data is not None
 
     def __eq__(self, other):
         if isinstance(other, tuple):
-            return self.location == other
+            return self.data == other
         else:
             return super(Node, self).__eq__(other)
+
+
+class KDNode(Node):
+
+
+    def add(self, point, depth=0):
+        """
+        Adds a point to the current node or recursively
+        descends to one of its children.
+
+        Users should call add() only to the topmost tree node or
+        pass the correct depth if they call for deeper nodes.
+        """
+
+        if self.data is None:
+            self.data = point
+            return
+
+        dim = check_dimensionality([self.data, point])
+        axis = select_axis(dim, depth)
+
+        if point[axis] < self.data[axis]:
+            if self.left is None:
+                self.left = self.__class__(point)
+            else:
+                self.left.add(point, depth+1)
+
+        else:
+            if self.right is None:
+                self.right = self.__class__(point)
+            else:
+                self.right.add(point, depth+1)
+
+
+    def remove(self, point, depth=0):
+        """ Removes the node with the given point from the tree
+
+        Returns the new root node of the (sub)tree """
+
+        dim = check_dimensionality([self.data])
+        axis = select_axis(dim, depth)
+
+
+        if self.data == point:
+            max_c, max_p, pos = self.max_child()
+            root = max_c
+
+            for child, p in self.children:
+                if child is not root:
+                    root.set_child(p, child)
+
+            self.left = None
+            self.right = None
+
+            root.remove(self.data)
+            return root
+
+
+        if self.left and self.left.data == point:
+            if self.left.is_leaf:
+                self.left = None
+
+            elif len(list(self.left.children)) == 1:
+                self.left = self.left.left or \
+                                  self.left.right
+
+            else:
+                self.left = self.left.remove(point, depth+1)
+
+
+        elif self.right and self.right.data == point:
+            if self.right.is_leaf:
+                self.right = None
+
+            elif len(list(self.right.children)) == 1:
+                self.right = self.right.left or \
+                                   self.right.right
+
+            else:
+                self.right = self.right.remove(point, depth+1)
+
+
+        elif point[axis] < self.data[axis]:
+            if self.left:
+                self.left.remove(point, depth+1)
+
+        elif point[axis] > self.data[axis]:
+            if self.right:
+                self.right.remove(point, depth+1)
+
+        return self
+
+
+    def rebalance(self):
+        """
+        Returns the (possibly new) root of the rebalanced tree
+        """
+        return create(list(self.inorder()))
+
+
+    def axis_dist(self, point, axis):
+        """
+        Squared distance at the given axis between
+        the current Node and the given point
+        """
+        import math
+        return math.pow(self.data[axis] - point[axis], 2)
+
+
+    def dist(self, point):
+        """
+        Squared distance between the current Node
+        and the given point
+        """
+        r = range(len(self.data))
+        return sum([self.axis_dist(point, i) for i in r])
+
+
+    def search_nn(self, point, best=None, depth=0):
+        """
+        Search the nearest neighbor of the given point
+        """
+
+        if best is None:
+            best = self
+
+        # consider the current node
+        if self.dist(point) < best.dist(point):
+            best = self
+
+        # sort the children, nearer one first
+        children = sorted(self.children, key=lambda c, p: c.dist(point))
+
+        axis = select_axis(len(self.data), depth)
+
+        for child, p in children:
+            # check if node needs to be recursed
+            if self.axis_dist(point, axis) < best.dist(point):
+                best = child.search_nn(point, best, depth+1)
+
+        return best
+
 
 
 def select_axis(dimensions, depth):
@@ -282,7 +287,7 @@ def create(point_list=[], depth=0):
     """ Creates a kd-tree from a list of points """
 
     if not point_list:
-        return Node()
+        return KDNode()
 
     dim = check_dimensionality(point_list)
     axis = select_axis(dim, depth)
@@ -294,7 +299,7 @@ def create(point_list=[], depth=0):
     loc   = point_list[median]
     left  = create(point_list[:median], depth + 1)
     right = create(point_list[median + 1:], depth + 1)
-    return Node(loc, left, right)
+    return KDNode(loc, left, right)
 
 
 def check_dimensionality(point_list):
@@ -319,11 +324,11 @@ def level_order(tree, include_all=False):
         node = q.popleft()
         yield node
 
-        if include_all or node.left_child:
-            q.append(node.left_child or Node())
+        if include_all or node.left:
+            q.append(node.left or node.__class__())
 
-        if include_all or node.right_child:
-            q.append(node.right_child or Node())
+        if include_all or node.right:
+            q.append(node.right or node.__class__())
 
 
 
@@ -346,7 +351,7 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
 
         width = max_width*node_width/per_level
 
-        node_str = (str(node.location) if node else '').center(width)
+        node_str = (str(node.data) if node else '').center(width)
         print node_str,
 
         in_level += 1
