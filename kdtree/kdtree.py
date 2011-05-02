@@ -15,21 +15,6 @@ class Node(object):
         self.right = right
 
 
-    def max_child(self):
-        """ Returns the maximum child of the subtree and its parent """
-
-        if self.right and list(self.right.children):
-            return self.right.max_child()
-        return (self.right, self, 1)
-
-    def min_child(self):
-        """ Returns the minimum child of the subtree and its parent """
-
-        if self.left and list(self.left.children):
-            return self.left.min_child()
-        return (self.left, self, 0)
-
-
     @property
     def is_leaf(self):
         return (not self.data) or \
@@ -37,6 +22,9 @@ class Node(object):
 
 
     def preorder(self):
+        if not self:
+            return
+
         yield self
 
         if self.left:
@@ -49,6 +37,9 @@ class Node(object):
 
 
     def inorder(self):
+        if not self:
+            return
+
         if self.left:
             for x in self.left.inorder():
                 yield x
@@ -61,6 +52,9 @@ class Node(object):
 
 
     def postorder(self):
+        if not self:
+            return
+
         if self.left:
             for x in self.left.postorder():
                 yield x
@@ -97,7 +91,7 @@ class Node(object):
         if index == 0:
             self.left = child
         else:
-            self.right_hild = child
+            self.right = child
 
 
     def height(self):
@@ -119,6 +113,12 @@ class Node(object):
         return max([min_height] + [c.height()+1 for c, p in self.children])
 
 
+    def get_child_pos(self, child):
+        for c, pos in self.children:
+            if child == c:
+                return pos
+
+
     def __repr__(self):
         return '<%(cls)s - %(data)s>' % \
             dict(cls=self.__class__.__name__, data=repr(self.data))
@@ -131,7 +131,7 @@ class Node(object):
         if isinstance(other, tuple):
             return self.data == other
         else:
-            return super(Node, self).__eq__(other)
+            return self.data == other.data
 
 
 class KDNode(Node):
@@ -166,37 +166,59 @@ class KDNode(Node):
                 self.right.add(point, depth+1)
 
 
+    def find_replacement(self, axis):
+        if self.right:
+            child, parent = self.right.extreme_child(min, axis)
+        else:
+            child, parent = self.left.extreme_child(max, axis)
+
+        return (child, parent if parent is not None else self)
+
+
+
     def remove(self, point, depth=0):
         """ Removes the node with the given point from the tree
 
         Returns the new root node of the (sub)tree """
+
+        if not self:
+            return
 
         dim = check_dimensionality([self.data])
         axis = select_axis(dim, depth)
 
 
         if self.data == point:
-            max_c, max_p, pos = self.max_child()
-            root = max_c
 
-            for child, p in self.children:
-                if child is not root:
-                    root.set_child(p, child)
+            if self.is_leaf:
+                self.data = None
+                return self
 
-            self.left = None
-            self.right = None
+            else:
+                root, max_p = self.find_replacement(axis)
 
-            root.remove(self.data)
-            return root
+                pos = max_p.get_child_pos(root)
+
+                # self and root swap positions
+                tmp_l, tmp_r = self.left, self.right
+                self.left, self.right = root.left, root.right
+                root.left, root.right = tmp_l if tmp_l is not root else self, tmp_r if tmp_r is not root else self
+
+
+                if max_p is not self:
+                    max_p.set_child(pos, self)
+                    new_depth = max_p.height()
+                    max_p.remove(self.data, depth=new_depth)
+
+                else:
+                    root.remove(self.data, depth=depth)
+
+                return root
 
 
         if self.left and self.left.data == point:
             if self.left.is_leaf:
                 self.left = None
-
-            elif len(list(self.left.children)) == 1:
-                self.left = self.left.left or \
-                                  self.left.right
 
             else:
                 self.left = self.left.remove(point, depth+1)
@@ -206,21 +228,17 @@ class KDNode(Node):
             if self.right.is_leaf:
                 self.right = None
 
-            elif len(list(self.right.children)) == 1:
-                self.right = self.right.left or \
-                                   self.right.right
-
             else:
                 self.right = self.right.remove(point, depth+1)
 
 
-        elif point[axis] < self.data[axis]:
+        if point[axis] <= self.data[axis]:
             if self.left:
-                self.left.remove(point, depth+1)
+                self.left = self.left.remove(point, depth+1)
 
-        elif point[axis] > self.data[axis]:
+        if point[axis] >= self.data[axis]:
             if self.right:
-                self.right.remove(point, depth+1)
+                self.right = self.right.remove(point, depth+1)
 
         return self
 
@@ -274,6 +292,45 @@ class KDNode(Node):
 
         return best
 
+
+    def is_valid(self, depth=0):
+        if not self:
+            return True
+
+        dim = check_dimensionality([self.data])
+        axis = select_axis(dim, depth)
+
+        if self.left and self.data[axis] < self.left.data[axis]:
+            return False
+
+        if self.right and self.data[axis] > self.right.data[axis]:
+            return False
+
+        return all(c.is_valid(depth+1) for c, _ in self.children) or self.is_leaf
+
+
+    def extreme_child(self, sel_func, axis):
+        """ Returns a child of the subtree and its parent
+
+        The child is selected by sel_func which is either min or max
+        (or a different function with similar semantics). """
+
+        max_key = lambda (child, parent): child.data[axis]
+
+
+        # we don't know our parent, so we include None
+        me = [(self, None)] if self else []
+
+        child_max = [c.extreme_child(sel_func, axis) for c, _ in self.children]
+        # insert self for unknown parents
+        child_max = [(c, p if p is not None else self) for c, p in child_max]
+
+        candidates =  me + child_max
+
+        if not candidates:
+            return None, None
+
+        return sel_func(candidates, key=max_key)
 
 
 def select_axis(dimensions, depth):
@@ -349,7 +406,7 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
             print
             print ' '*left_padding,
 
-        width = max_width*node_width/per_level
+        width = int(max_width*node_width/per_level)
 
         node_str = (str(node.data) if node else '').center(width)
         print node_str,
