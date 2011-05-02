@@ -45,6 +45,28 @@ class RemoveTest(unittest.TestCase):
             self.assertEqual(nodes_in_tree, remaining_points)
 
 
+    def test_add(self, num=10):
+        """ Tests random additions to a tree, multiple times """
+
+        for i in range(num):
+            self.do_random_add()
+
+
+    def do_random_add(self, num_points=100):
+
+        points = list(set(islice(random_points(), 0, num_points)))
+        tree = kdtree.KDNode()
+        for n, point in enumerate(points, 1):
+
+            tree.add(point)
+
+            self.assertTrue(tree.is_valid())
+
+            self.assertTrue(point in [node.data for node in tree.inorder()])
+
+            nodes_in_tree = len(list(tree.inorder()))
+            self.assertEqual(nodes_in_tree, n)
+
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
     points = list(islice(random_points(), 0, nodes))
