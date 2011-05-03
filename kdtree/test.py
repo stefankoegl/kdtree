@@ -2,12 +2,19 @@
 
 from __future__ import absolute_import
 
+import sys
 import random
 import logging
 import unittest
 from itertools import islice
 
 import kdtree
+
+
+try:
+    import coverage
+except ImportError:
+    coverage = None
 
 
 class RemoveTest(unittest.TestCase):
@@ -82,5 +89,19 @@ def random_points(dimensions=3, minval=0, maxval=100):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
-    unittest.main()
+
+    if coverage is not None:
+        coverage.erase()
+        coverage.start()
+
+    suite = unittest.TestLoader().loadTestsFromTestCase(RemoveTest)
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+
+    if not result.wasSuccessful():
+        sys.exit(1)
+
+    if coverage is not None:
+        coverage.stop()
+        coverage.report([kdtree])
+        coverage.erase()
