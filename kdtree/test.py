@@ -62,7 +62,7 @@ class RemoveTest(unittest.TestCase):
     def do_random_add(self, num_points=100):
 
         points = list(set(islice(random_points(), 0, num_points)))
-        tree = kdtree.KDNode()
+        tree = kdtree.create(dimensions=len(points[0]))
         for n, point in enumerate(points, 1):
 
             tree.add(point)
