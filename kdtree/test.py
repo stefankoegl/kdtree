@@ -6,6 +6,7 @@ import sys
 import random
 import logging
 import unittest
+import doctest
 from itertools import islice
 
 import kdtree
@@ -51,6 +52,13 @@ class RemoveTest(unittest.TestCase):
             nodes_in_tree = len(list(tree.inorder()))
             self.assertEqual(nodes_in_tree, remaining_points)
 
+    def test_remove_empty_tree(self):
+        tree = kdtree.create(dimensions=2)
+        tree.remove( (1, 2) )
+        self.assertFalse(bool(tree))
+
+
+class AddTest(unittest.TestCase):
 
     def test_add(self, num=10):
         """ Tests random additions to a tree, multiple times """
@@ -75,12 +83,84 @@ class RemoveTest(unittest.TestCase):
             self.assertEqual(nodes_in_tree, n)
 
 
+class InvalidTreeTests(unittest.TestCase):
+
+
+    def test_invalid_child(self):
+        """ Children on wrong subtree invalidate Tree """
+        child = kdtree.KDNode( (3, 2) )
+        child.axis = 2
+        tree = kdtree.create([(2, 3)])
+        tree.left=child
+        self.assertFalse(tree.is_valid())
+
+        tree = kdtree.create([(4, 1)])
+        tree.right=child
+        self.assertFalse(tree.is_valid())
+
+
+    def test_different_dimensions(self):
+        """ Can't create Tree for Points of different dimensions """
+        points = [ (1, 2), (2, 3, 4) ]
+        self.assertRaises(ValueError, kdtree.create, points)
+
+
+class TreeTraversals(unittest.TestCase):
+
+    def test_same_length(self):
+        tree = random_tree()
+
+        inorder_len = len(list(tree.inorder()))
+        preorder_len = len(list(tree.preorder()))
+        postorder_len = len(list(tree.postorder()))
+
+        self.assertEqual(inorder_len, preorder_len)
+        self.assertEqual(preorder_len, postorder_len)
+
+
+
+class BalanceTests(unittest.TestCase):
+
+
+    def test_rebalance(self):
+
+        tree = random_tree(1)
+        while tree.is_balanced:
+            tree.add(random_point())
+
+        tree = tree.rebalance()
+        self.assertTrue(tree.is_balanced)
+
+
+
+class NearestNeighbor(unittest.TestCase):
+
+    def test_search_nn(self, nodes=100):
+
+        points = list(islice(random_points(), 0, nodes))
+        tree = kdtree.create(points)
+
+        point = random_point()
+        nn = tree.search_nn(point)
+
+        best = None
+        best_dist = None
+        for p in tree.inorder():
+            dist = p.dist(point)
+            if best is None or dist < best_dist:
+                best = p
+                best_dist = dist
+
+        self.assertEqual(best_dist, best.dist(point))
+
+
+
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
     points = list(islice(random_points(), 0, nodes))
     tree = kdtree.create(points)
     return tree
 
-def random_point(dimensions, minval, maxval):
+def random_point(dimensions=3, minval=0, maxval=100):
     return tuple(random.randint(minval, maxval) for _ in range(dimensions))
 
 def random_points(dimensions=3, minval=0, maxval=100):
@@ -94,7 +174,8 @@ if __name__ == '__main__':
         coverage.erase()
         coverage.start()
 
-    suite = unittest.TestLoader().loadTestsFromTestCase(RemoveTest)
+    suite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
+    suite.addTest(doctest.DocTestSuite(kdtree))
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
 
