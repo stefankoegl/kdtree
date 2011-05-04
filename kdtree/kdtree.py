@@ -170,13 +170,12 @@ class KDNode(Node):
 
 
     @require_axis
-    def add(self, point, depth=0):
+    def add(self, point):
         """
         Adds a point to the current node or recursively
         descends to one of its children.
 
-        Users should call add() only to the topmost tree node or
-        pass the correct depth if they call for deeper nodes.
+        Users should call add() only to the topmost tree.
         """
 
         if self.data is None:
@@ -189,13 +188,13 @@ class KDNode(Node):
             if self.left is None:
                 self.left = self.create_subnode(point)
             else:
-                self.left.add(point, depth+1)
+                self.left.add(point)
 
         else:
             if self.right is None:
                 self.right = self.create_subnode(point)
             else:
-                self.right.add(point, depth+1)
+                self.right.add(point)
 
 
     @require_axis
@@ -217,7 +216,7 @@ class KDNode(Node):
 
 
     @require_axis
-    def remove(self, point, depth=0):
+    def remove(self, point):
         """ Removes the node with the given point from the tree
 
         Returns the new root node of the (sub)tree """
@@ -245,10 +244,10 @@ class KDNode(Node):
                 if max_p is not self:
                     max_p.set_child(pos, self)
                     new_depth = max_p.height()
-                    max_p.remove(self.data, depth=new_depth)
+                    max_p.remove(self.data)
 
                 else:
-                    root.remove(self.data, depth=depth)
+                    root.remove(self.data)
 
                 return root
 
@@ -258,7 +257,7 @@ class KDNode(Node):
                 self.left = None
 
             else:
-                self.left = self.left.remove(point, depth+1)
+                self.left = self.left.remove(point)
 
 
         elif self.right and self.right.data == point:
@@ -266,16 +265,16 @@ class KDNode(Node):
                 self.right = None
 
             else:
-                self.right = self.right.remove(point, depth+1)
+                self.right = self.right.remove(point)
 
 
         if point[self.axis] <= self.data[self.axis]:
             if self.left:
-                self.left = self.left.remove(point, depth+1)
+                self.left = self.left.remove(point)
 
         if point[self.axis] >= self.data[self.axis]:
             if self.right:
-                self.right = self.right.remove(point, depth+1)
+                self.right = self.right.remove(point)
 
         return self
 
