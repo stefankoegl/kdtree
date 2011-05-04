@@ -247,6 +247,7 @@ class KDNode(Node):
                 tmp_l, tmp_r = self.left, self.right
                 self.left, self.right = root.left, root.right
                 root.left, root.right = tmp_l if tmp_l is not root else self, tmp_r if tmp_r is not root else self
+                self.axis, root.axis = root.axis, self.axis
 
 
                 if max_p is not self:
