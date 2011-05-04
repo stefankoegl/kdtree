@@ -318,7 +318,7 @@ class KDNode(Node):
             best = self
 
         # sort the children, nearer one first
-        children = sorted(self.children, key=lambda c, p: c.dist(point))
+        children = sorted(self.children, key=lambda (c, p): c.dist(point))
 
         for child, p in children:
             # check if node needs to be recursed
