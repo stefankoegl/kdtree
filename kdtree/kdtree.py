@@ -17,6 +17,14 @@ class Node(object):
 
     @property
     def is_leaf(self):
+        """ Returns True if a Node has no subnodes
+
+        >>> Node().is_leaf
+        True
+
+        >>> Node( 1, left=Node(2) ).is_leaf
+        False
+        """
         return (not self.data) or \
                (all(not bool(c) for c, p in self.children))
 
@@ -71,13 +79,13 @@ class Node(object):
         """
         Returns an iterator for the non-empty children of the Node
 
-        >>> len(list(create().children()))
+        >>> len(list(create(dimensions=2).children))
         0
 
-        >>> len(list(create([ (1, 2) ]).children()))
+        >>> len(list(create([ (1, 2) ]).children))
         0
 
-        >>> len(list(create([ (2, 2), (2, 1), (2, 3) ]).children()))
+        >>> len(list(create([ (2, 2), (2, 1), (2, 3) ]).children))
         2
         """
 
@@ -99,7 +107,7 @@ class Node(object):
         Returns height of the (sub)tree, without considering
         empty leaf-nodes
 
-        >>> create().height()
+        >>> create(dimensions=2).height()
         0
 
         >>> create([ (1, 2) ]).height()
