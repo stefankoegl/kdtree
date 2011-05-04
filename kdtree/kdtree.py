@@ -288,6 +288,17 @@ class KDNode(Node):
         return self
 
 
+    @property
+    def is_balanced(self):
+        left_height = self.left.height() if self.left else 0
+        right_height = self.right.height() if self.right else 0
+
+        if abs(left_height - right_height) > 1:
+            return False
+
+        return all(c.is_balanced for c, _ in self.children)
+
+
     def rebalance(self):
         """
         Returns the (possibly new) root of the rebalanced tree
