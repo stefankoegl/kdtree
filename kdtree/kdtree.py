@@ -406,8 +406,8 @@ def create(point_list=[], dimensions=None, axis=0, sel_axis=None):
     median = len(point_list) // 2
 
     loc   = point_list[median]
-    left  = create(point_list[:median], sel_axis(axis))
-    right = create(point_list[median + 1:], sel_axis(axis))
+    left  = create(point_list[:median], dim, sel_axis(axis))
+    right = create(point_list[median + 1:], dim, sel_axis(axis))
     return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis)
 
 
