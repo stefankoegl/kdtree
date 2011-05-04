@@ -303,7 +303,7 @@ class KDNode(Node):
         """
         Returns the (possibly new) root of the rebalanced tree
         """
-        return create(list([x.data for x in self.inorder()]))
+        return create([x.data for x in self.inorder()])
 
 
     def axis_dist(self, point, axis):
