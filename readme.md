@@ -2,7 +2,7 @@ A simple kd-tree in Python
 ==========================
 
 The kdtree package can construct, modify and search
-[kd-trees]{http://en.wikipedia.org/wiki/Kd-tree}.
+[kd-trees](http://en.wikipedia.org/wiki/Kd-tree).
 
 Usage
 -----
