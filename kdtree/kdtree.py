@@ -180,7 +180,7 @@ class KDNode(Node):
 
 
     def __init__(self, data=None, left=None, right=None, axis=None,
-            sel_axis=None):
+            sel_axis=None, dimensions=None):
         """ Creates a new node for a kd-tree
 
         If the node will be used within a tree, the axis and the sel_axis
@@ -193,6 +193,7 @@ class KDNode(Node):
         super(KDNode, self).__init__(data, left, right)
         self.axis = axis
         self.sel_axis = sel_axis
+        self.dimensions = dimensions
 
 
     @require_axis
@@ -204,12 +205,12 @@ class KDNode(Node):
         Users should call add() only to the topmost tree.
         """
 
+        check_dimensionality([point], dimensions=self.dimensions)
+
         # Adding has hit an empty leaf-node, add here
         if self.data is None:
             self.data = point
             return
-
-        dim = check_dimensionality([self.data, point])
 
         # split on self.axis, recurse either left or right
         if point[self.axis] < self.data[self.axis]:
@@ -231,7 +232,8 @@ class KDNode(Node):
 
         return self.__class__(data,
                 axis=self.sel_axis(self.axis),
-                sel_axis=self.sel_axis)
+                sel_axis=self.sel_axis,
+                dimensions=self.dimensions)
 
 
     @require_axis
@@ -452,38 +454,31 @@ def create(point_list=[], dimensions=None, axis=0, sel_axis=None):
         raise ValueError('either point_list or dimensions must be provided')
 
     elif point_list:
-        dim = check_dimensionality(point_list)
-        dimensions = dimensions or dim
-    else:
-        dim = dimensions
-
-
-    if dim != dimensions:
-        raise ValueError('dimensions parameter must match actual dimension of points')
+        dimensions = check_dimensionality(point_list, dimensions)
 
     # by default cycle through the axis
-    sel_axis = sel_axis or (lambda prev_axis: (prev_axis+1) % dim)
+    sel_axis = sel_axis or (lambda prev_axis: (prev_axis+1) % dimensions)
 
     if not point_list:
-        return KDNode(sel_axis=sel_axis, axis=axis)
+        return KDNode(sel_axis=sel_axis, axis=axis, dimensions=dimensions)
 
     # Sort point list and choose median as pivot element
     point_list.sort(key=lambda point: point[axis])
     median = len(point_list) // 2
 
     loc   = point_list[median]
-    left  = create(point_list[:median], dim, sel_axis(axis))
-    right = create(point_list[median + 1:], dim, sel_axis(axis))
+    left  = create(point_list[:median], dimensions, sel_axis(axis))
+    right = create(point_list[median + 1:], dimensions, sel_axis(axis))
     return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis)
 
 
-def check_dimensionality(point_list):
-    dimension = len(point_list[0])
-    for p in point_list[1:]:
-        if len(p) != dimension:
+def check_dimensionality(point_list, dimensions=None):
+    dimensions = dimensions or len(point_list[0])
+    for p in point_list:
+        if len(p) != dimensions:
             raise ValueError('All Points in the point_list must have the same dimensionality')
 
-    return dimension
+    return dimensions
 
 
 
