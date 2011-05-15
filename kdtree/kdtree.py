@@ -1,5 +1,4 @@
 import math
-from itertools import chain
 from collections import deque
 
 
@@ -30,6 +29,8 @@ class Node(object):
 
 
     def preorder(self):
+        """ iterator for nodes: root, left, right """
+
         if not self:
             return
 
@@ -45,6 +46,8 @@ class Node(object):
 
 
     def inorder(self):
+        """ iterator for nodes: left, root, right """
+
         if not self:
             return
 
@@ -60,6 +63,8 @@ class Node(object):
 
 
     def postorder(self):
+        """ iterator for nodes: left, right, root """
+
         if not self:
             return
 
@@ -79,6 +84,9 @@ class Node(object):
         """
         Returns an iterator for the non-empty children of the Node
 
+        The children are returned as (Node, pos) tuples where pos is 0 for the
+        left subnode and 1 for the right.
+
         >>> len(list(create(dimensions=2).children))
         0
 
@@ -96,6 +104,10 @@ class Node(object):
 
 
     def set_child(self, index, child):
+        """ Sets one of the node's children
+
+        index 0 refers to the left, 1 to the right child """
+
         if index == 0:
             self.left = child
         else:
@@ -122,6 +134,11 @@ class Node(object):
 
 
     def get_child_pos(self, child):
+        """ Returns the position if the given child
+
+        If the given node is the left child, 0 is returned. If its the right
+        child, 1 is returned. Otherwise None """
+
         for c, pos in self.children:
             if child == c:
                 return pos
@@ -159,6 +176,7 @@ def require_axis(f):
 
 
 class KDNode(Node):
+    """ A Node that contains kd-tree specific data and methods """
 
 
     def __init__(self, data=None, left=None, right=None, axis=None,
@@ -186,12 +204,14 @@ class KDNode(Node):
         Users should call add() only to the topmost tree.
         """
 
+        # Adding has hit an empty leaf-node, add here
         if self.data is None:
             self.data = point
             return
 
         dim = check_dimensionality([self.data, point])
 
+        # split on self.axis, recurse either left or right
         if point[self.axis] < self.data[self.axis]:
             if self.left is None:
                 self.left = self.create_subnode(point)
@@ -207,6 +227,8 @@ class KDNode(Node):
 
     @require_axis
     def create_subnode(self, data):
+        """ Creates a subnode for the current node """
+
         return self.__class__(data,
                 axis=self.sel_axis(self.axis),
                 sel_axis=self.sel_axis)
@@ -214,6 +236,11 @@ class KDNode(Node):
 
     @require_axis
     def find_replacement(self):
+        """ Finds a replacement for the current node
+
+        The replacement is returned as a
+        (replacement-node, replacements-parent-node) tuple """
+
         if self.right:
             child, parent = self.right.extreme_child(min, self.axis)
         else:
@@ -229,9 +256,12 @@ class KDNode(Node):
 
         Returns the new root node of the (sub)tree """
 
+        # Recursion has reached an empty leaf node, nothing here to delete
         if not self:
             return
 
+
+        # Recursion has reached the node to be deleted
         if self.data == point:
 
             if self.is_leaf:
@@ -239,6 +269,7 @@ class KDNode(Node):
                 return self
 
             else:
+                # find a replacement for the node (will be the new subtree-root)
                 root, max_p = self.find_replacement()
 
                 pos = max_p.get_child_pos(root)
@@ -250,6 +281,7 @@ class KDNode(Node):
                 self.axis, root.axis = root.axis, self.axis
 
 
+                # Special-case if we have chosen a direct child as the replacement
                 if max_p is not self:
                     max_p.set_child(pos, self)
                     new_depth = max_p.height()
@@ -261,6 +293,7 @@ class KDNode(Node):
                 return root
 
 
+        # Remove direct subnode
         if self.left and self.left.data == point:
             if self.left.is_leaf:
                 self.left = None
@@ -277,6 +310,7 @@ class KDNode(Node):
                 self.right = self.right.remove(point)
 
 
+        # Recurse to subtrees
         if point[self.axis] <= self.data[self.axis]:
             if self.left:
                 self.left = self.left.remove(point)
@@ -290,6 +324,11 @@ class KDNode(Node):
 
     @property
     def is_balanced(self):
+        """ Returns True if the (sub)tree is balanced
+
+        The tree is balanced if the heights of both subtrees differ at most by
+        1 """
+
         left_height = self.left.height() if self.left else 0
         right_height = self.right.height() if self.right else 0
 
@@ -303,6 +342,7 @@ class KDNode(Node):
         """
         Returns the (possibly new) root of the rebalanced tree
         """
+
         return create([x.data for x in self.inorder()])
 
 
@@ -311,7 +351,6 @@ class KDNode(Node):
         Squared distance at the given axis between
         the current Node and the given point
         """
-        import math
         return math.pow(self.data[axis] - point[axis], 2)
 
 
@@ -327,8 +366,11 @@ class KDNode(Node):
     @require_axis
     def search_nn(self, point, best=None):
         """
-        Search the nearest neighbor of the given point
-        """
+        Search the nearest node of the given point
+
+        point must be a location, not a node. The nearest node to the point is
+        returned. If a location of an actual node is used, the Node with this
+        location will be retuend (not its neighbor) """
 
         if best is None:
             best = self
@@ -350,6 +392,10 @@ class KDNode(Node):
 
     @require_axis
     def is_valid(self):
+        """ Checks recursively if the tree is valid
+
+        It is valid if each node splits correctly """
+
         if not self:
             return True
 
@@ -407,7 +453,7 @@ def create(point_list=[], dimensions=None, axis=0, sel_axis=None):
 
     elif point_list:
         dim = check_dimensionality(point_list)
-        dimensions = dim
+        dimensions = dimensions or dim
     else:
         dim = dimensions
 
