@@ -1,3 +1,15 @@
+"""
+kdtree implementation by stefankoegl
+https://github.com/stefankoegl/kdtree
+GPLv3
+
+rafikueng:
+i added code to retrieve the all nearest neigbours within a 
+provided distance
+"""
+
+
+
 import math
 from collections import deque
 
@@ -5,8 +17,8 @@ from collections import deque
 class Node(object):
     """ A Node in a kd-tree
 
-    A tree is represented by its root node, and every node represents
-    its subtree"""
+A tree is represented by its root node, and every node represents
+its subtree"""
 
     def __init__(self, data=None, left=None, right=None):
         self.data = data
@@ -18,12 +30,12 @@ class Node(object):
     def is_leaf(self):
         """ Returns True if a Node has no subnodes
 
-        >>> Node().is_leaf
-        True
+>>> Node().is_leaf
+True
 
-        >>> Node( 1, left=Node(2) ).is_leaf
-        False
-        """
+>>> Node( 1, left=Node(2) ).is_leaf
+False
+"""
         return (not self.data) or \
                (all(not bool(c) for c, p in self.children))
 
@@ -82,20 +94,20 @@ class Node(object):
     @property
     def children(self):
         """
-        Returns an iterator for the non-empty children of the Node
+Returns an iterator for the non-empty children of the Node
 
-        The children are returned as (Node, pos) tuples where pos is 0 for the
-        left subnode and 1 for the right.
+The children are returned as (Node, pos) tuples where pos is 0 for the
+left subnode and 1 for the right.
 
-        >>> len(list(create(dimensions=2).children))
-        0
+>>> len(list(create(dimensions=2).children))
+0
 
-        >>> len(list(create([ (1, 2) ]).children))
-        0
+>>> len(list(create([ (1, 2) ]).children))
+0
 
-        >>> len(list(create([ (2, 2), (2, 1), (2, 3) ]).children))
-        2
-        """
+>>> len(list(create([ (2, 2), (2, 1), (2, 3) ]).children))
+2
+"""
 
         if self.left and self.left.data is not None:
             yield self.left, 0
@@ -106,7 +118,7 @@ class Node(object):
     def set_child(self, index, child):
         """ Sets one of the node's children
 
-        index 0 refers to the left, 1 to the right child """
+index 0 refers to the left, 1 to the right child """
 
         if index == 0:
             self.left = child
@@ -116,18 +128,18 @@ class Node(object):
 
     def height(self):
         """
-        Returns height of the (sub)tree, without considering
-        empty leaf-nodes
+Returns height of the (sub)tree, without considering
+empty leaf-nodes
 
-        >>> create(dimensions=2).height()
-        0
+>>> create(dimensions=2).height()
+0
 
-        >>> create([ (1, 2) ]).height()
-        1
+>>> create([ (1, 2) ]).height()
+1
 
-        >>> create([ (1, 2), (2, 3) ]).height()
-        2
-        """
+>>> create([ (1, 2), (2, 3) ]).height()
+2
+"""
 
         min_height = int(bool(self))
         return max([min_height] + [c.height()+1 for c, p in self.children])
@@ -136,8 +148,8 @@ class Node(object):
     def get_child_pos(self, child):
         """ Returns the position if the given child
 
-        If the given node is the left child, 0 is returned. If its the right
-        child, 1 is returned. Otherwise None """
+If the given node is the left child, 0 is returned. If its the right
+child, 1 is returned. Otherwise None """
 
         for c, pos in self.children:
             if child == c:
@@ -183,12 +195,12 @@ class KDNode(Node):
             sel_axis=None, dimensions=None):
         """ Creates a new node for a kd-tree
 
-        If the node will be used within a tree, the axis and the sel_axis
-        function should be supplied.
+If the node will be used within a tree, the axis and the sel_axis
+function should be supplied.
 
-        sel_axis(axis) is used when creating subnodes of the current node. It
-        receives the axis of the parent node and returns the axis of the child
-        node. """
+sel_axis(axis) is used when creating subnodes of the current node. It
+receives the axis of the parent node and returns the axis of the child
+node. """
 
         super(KDNode, self).__init__(data, left, right)
         self.axis = axis
@@ -199,11 +211,11 @@ class KDNode(Node):
     @require_axis
     def add(self, point):
         """
-        Adds a point to the current node or recursively
-        descends to one of its children.
+Adds a point to the current node or recursively
+descends to one of its children.
 
-        Users should call add() only to the topmost tree.
-        """
+Users should call add() only to the topmost tree.
+"""
 
         check_dimensionality([point], dimensions=self.dimensions)
 
@@ -240,8 +252,8 @@ class KDNode(Node):
     def find_replacement(self):
         """ Finds a replacement for the current node
 
-        The replacement is returned as a
-        (replacement-node, replacements-parent-node) tuple """
+The replacement is returned as a
+(replacement-node, replacements-parent-node) tuple """
 
         if self.right:
             child, parent = self.right.extreme_child(min, self.axis)
@@ -256,7 +268,7 @@ class KDNode(Node):
     def remove(self, point):
         """ Removes the node with the given point from the tree
 
-        Returns the new root node of the (sub)tree """
+Returns the new root node of the (sub)tree """
 
         # Recursion has reached an empty leaf node, nothing here to delete
         if not self:
@@ -328,8 +340,8 @@ class KDNode(Node):
     def is_balanced(self):
         """ Returns True if the (sub)tree is balanced
 
-        The tree is balanced if the heights of both subtrees differ at most by
-        1 """
+The tree is balanced if the heights of both subtrees differ at most by
+1 """
 
         left_height = self.left.height() if self.left else 0
         right_height = self.right.height() if self.right else 0
@@ -342,25 +354,25 @@ class KDNode(Node):
 
     def rebalance(self):
         """
-        Returns the (possibly new) root of the rebalanced tree
-        """
+Returns the (possibly new) root of the rebalanced tree
+"""
 
         return create([x.data for x in self.inorder()])
 
 
     def axis_dist(self, point, axis):
         """
-        Squared distance at the given axis between
-        the current Node and the given point
-        """
+Squared distance at the given axis between
+the current Node and the given point
+"""
         return math.pow(self.data[axis] - point[axis], 2)
 
 
     def dist(self, point):
         """
-        Squared distance between the current Node
-        and the given point
-        """
+Squared distance between the current Node
+and the given point
+"""
         r = range(len(self.data))
         return sum([self.axis_dist(point, i) for i in r])
 
@@ -368,11 +380,11 @@ class KDNode(Node):
     @require_axis
     def search_nn(self, point, best=None):
         """
-        Search the nearest node of the given point
+Search the nearest node of the given point
 
-        point must be a location, not a node. The nearest node to the point is
-        returned. If a location of an actual node is used, the Node with this
-        location will be retuend (not its neighbor) """
+point must be a location, not a node. The nearest node to the point is
+returned. If a location of an actual node is used, the Node with this
+location will be retuend (not its neighbor) """
 
         if best is None:
             best = self
@@ -391,12 +403,39 @@ class KDNode(Node):
 
         return best
 
+        
+    @require_axis
+    def search_nn_dist(self, point, distance, best=None):
+        """
+Search the n nearest nodes of the given point which are within given distance
+
+point must be a location, not a node. A list containing the n nearest nodes to
+the point within the distance is returned.
+"""
+
+        if best is None:
+            best = []
+
+        # consider the current node
+        if self.dist(point) < distance: #best.dist(point):
+            best.append(self)
+
+        # sort the children, nearer one first
+        children = sorted(self.children, key=lambda (c, p): c.dist(point))
+
+        for child, p in children:
+            # check if node needs to be recursed
+            if self.axis_dist(point, self.axis) < distance: #best.dist(point):
+                child.search_nn_dist(point, distance, best)
+
+        return best
+        
 
     @require_axis
     def is_valid(self):
         """ Checks recursively if the tree is valid
 
-        It is valid if each node splits correctly """
+It is valid if each node splits correctly """
 
         if not self:
             return True
@@ -413,8 +452,8 @@ class KDNode(Node):
     def extreme_child(self, sel_func, axis):
         """ Returns a child of the subtree and its parent
 
-        The child is selected by sel_func which is either min or max
-        (or a different function with similar semantics). """
+The child is selected by sel_func which is either min or max
+(or a different function with similar semantics). """
 
         max_key = lambda (child, parent): child.data[axis]
 
@@ -426,7 +465,7 @@ class KDNode(Node):
         # insert self for unknown parents
         child_max = [(c, p if p is not None else self) for c, p in child_max]
 
-        candidates =  me + child_max
+        candidates = me + child_max
 
         if not candidates:
             return None, None
@@ -438,17 +477,17 @@ class KDNode(Node):
 def create(point_list=[], dimensions=None, axis=0, sel_axis=None):
     """ Creates a kd-tree from a list of points
 
-    All points in the list must be of the same dimensionality.
+All points in the list must be of the same dimensionality.
 
-    If no point_list is given, an empty tree is created. The number of
-    dimensions has to be given instead.
+If no point_list is given, an empty tree is created. The number of
+dimensions has to be given instead.
 
-    If both a point_list and dimensions are given, the numbers must agree.
+If both a point_list and dimensions are given, the numbers must agree.
 
-    Axis is the axis on which the root-node should split.
+Axis is the axis on which the root-node should split.
 
-    sel_axis(axis) is used when creating subnodes of a node. It receives the
-    axis of the parent node and returns the axis of the child node. """
+sel_axis(axis) is used when creating subnodes of a node. It receives the
+axis of the parent node and returns the axis of the child node. """
 
     if not point_list and not dimensions:
         raise ValueError('either point_list or dimensions must be provided')
@@ -466,8 +505,8 @@ def create(point_list=[], dimensions=None, axis=0, sel_axis=None):
     point_list.sort(key=lambda point: point[axis])
     median = len(point_list) // 2
 
-    loc   = point_list[median]
-    left  = create(point_list[:median], dimensions, sel_axis(axis))
+    loc = point_list[median]
+    left = create(point_list[:median], dimensions, sel_axis(axis))
     right = create(point_list[median + 1:], dimensions, sel_axis(axis))
     return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis)
 
@@ -485,8 +524,8 @@ def check_dimensionality(point_list, dimensions=None):
 def level_order(tree, include_all=False):
     """ Returns an iterator over the tree in level-order
 
-    If include_all is set to True, empty parts of the tree are filled
-    with dummy entries and the iterator becomes infinite. """
+If include_all is set to True, empty parts of the tree are filled
+with dummy entries and the iterator becomes infinite. """
 
     q = deque()
     q.append(tree)
@@ -509,8 +548,8 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
     max_width = pow(2, height)
 
     per_level = 1
-    in_level  = 0
-    level     = 0
+    in_level = 0
+    level = 0
 
     for node in level_order(tree, include_all=True):
 
@@ -527,9 +566,9 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
         in_level += 1
 
         if in_level == per_level:
-            in_level   = 0
+            in_level = 0
             per_level *= 2
-            level     += 1
+            level += 1
 
         if level > height:
             break
