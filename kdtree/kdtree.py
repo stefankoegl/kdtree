@@ -393,6 +393,31 @@ class KDNode(Node):
 
 
     @require_axis
+    def search_nn_dist(self, point, distance, best=[]):
+        """
+        Search the n nearest nodes of the given point which are within given
+        distance
+
+        point must be a location, not a node. A list containing the n nearest
+        nodes to the point within the distance will be returned.
+        """
+
+        # consider the current node
+        if self.dist(point) < distance:
+            best.append(self)
+
+        # sort the children, nearer one first (is this really necessairy?)
+        children = sorted(self.children, key=lambda (c, p): c.dist(point))
+
+        for child, p in children:
+            # check if child node needs to be recursed
+            if self.axis_dist(point, self.axis) < distance:
+                child.search_nn_dist(point, distance, best)
+
+        return best
+
+
+    @require_axis
     def is_valid(self):
         """ Checks recursively if the tree is valid
 
