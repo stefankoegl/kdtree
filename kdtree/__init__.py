@@ -1,3 +1,5 @@
+# -*- coding: latin-1 -*-
+
 """A Python implemntation of a kd-tree
 
 This package provides a simple implementation of a kd-tree in Python.
