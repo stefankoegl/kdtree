@@ -382,12 +382,16 @@ class KDNode(Node):
             best = self
 
         # sort the children, nearer one first
-        children = sorted(self.children, key=lambda (c, p): c.dist(point))
+        children = iter(sorted(self.children, key=lambda (c, p): c.axis_dist(point, self.axis)))
 
-        for child, p in children:
-            # check if node needs to be recursed
-            if self.axis_dist(point, self.axis) < best.dist(point):
-                best = child.search_nn(point, best)
+
+        c1, _ = next(children, (None, None))
+        if c1:
+            best = c1.search_nn(point, best)
+
+        c2, _ = next(children, (None, None))
+        if c2 and self.axis_dist(point, self.axis) < best.dist(point):
+            best = c2.search_nn(point, best)
 
         return best
 
