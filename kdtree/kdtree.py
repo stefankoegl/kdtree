@@ -199,31 +199,35 @@ class KDNode(Node):
     @require_axis
     def add(self, point):
         """
-        Adds a point to the current node or recursively
+        Adds a point to the current node or iteratively
         descends to one of its children.
 
         Users should call add() only to the topmost tree.
         """
 
-        check_dimensionality([point], dimensions=self.dimensions)
+        current = self
+        while True:
+            check_dimensionality([point], dimensions=current.dimensions)
 
-        # Adding has hit an empty leaf-node, add here
-        if self.data is None:
-            self.data = point
-            return
+            # Adding has hit an empty leaf-node, add here
+            if current.data is None:
+                current.data = point
+                break
 
-        # split on self.axis, recurse either left or right
-        if point[self.axis] < self.data[self.axis]:
-            if self.left is None:
-                self.left = self.create_subnode(point)
+            # split on self.axis, recurse either left or right
+            if point[current.axis] < current.data[current.axis]:
+                if current.left is None:
+                    current.left = current.create_subnode(point)
+                    break
+                else:
+                    current = current.left
+                    #self.left.add(point)
             else:
-                self.left.add(point)
-
-        else:
-            if self.right is None:
-                self.right = self.create_subnode(point)
-            else:
-                self.right.add(point)
+                if current.right is None:
+                    current.right = current.create_subnode(point)
+                    break
+                else:
+                    current = current.right
 
 
     @require_axis
@@ -374,27 +378,30 @@ class KDNode(Node):
         returned. If a location of an actual node is used, the Node with this
         location will be retuend (not its neighbor) """
 
-        if best is None:
-            best = self
+        current = self
+        while True:
+            if best is None:
+                best = current
 
-        # consider the current node
-        if self.dist(point) < best.dist(point):
-            best = self
+            # consider the current node
+            if current.dist(point) < best.dist(point):
+                best = current
 
-        # sort the children, nearer one first
-        children = iter(sorted(self.children, key=lambda (c, p): c.axis_dist(point, self.axis)))
+            # sort the children, nearer one first
+            children = iter(sorted(current.children,
+                key=lambda (c, p): c.axis_dist(point, current.axis)))
 
+            c1, _ = next(children, (None, None))
+            if c1:
+                current = c1
+                continue
 
-        c1, _ = next(children, (None, None))
-        if c1:
-            best = c1.search_nn(point, best)
+            c2, _ = next(children, (None, None))
+            if c2 and current.axis_dist(point, current.axis) < best.dist(point):
+                current = c2
+                continue
 
-        c2, _ = next(children, (None, None))
-        if c2 and self.axis_dist(point, self.axis) < best.dist(point):
-            best = c2.search_nn(point, best)
-
-        return best
-
+            return best
 
     @require_axis
     def search_nn_dist(self, point, distance, best=[]):
