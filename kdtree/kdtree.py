@@ -404,7 +404,7 @@ class KDNode(Node):
             return best
 
     @require_axis
-    def search_nn_dist(self, point, distance, best=[]):
+    def search_nn_dist(self, point, distance, best=None):
         """
         Search the n nearest nodes of the given point which are within given
         distance
@@ -412,6 +412,9 @@ class KDNode(Node):
         point must be a location, not a node. A list containing the n nearest
         nodes to the point within the distance will be returned.
         """
+
+        if best is None:
+            best = []
 
         # consider the current node
         if self.dist(point) < distance:
@@ -471,7 +474,7 @@ class KDNode(Node):
 
 
 
-def create(point_list=[], dimensions=None, axis=0, sel_axis=None):
+def create(point_list=None, dimensions=None, axis=0, sel_axis=None):
     """ Creates a kd-tree from a list of points
 
     All points in the list must be of the same dimensionality.
