@@ -1,4 +1,4 @@
 include AUTHORS
-include COPYING
+include LICENSE
 include readme.md
 include test.py
