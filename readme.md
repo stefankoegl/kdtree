@@ -1,4 +1,4 @@
-A simple kd-tree in Python
+A simple kd-tree in Python [![Build Status](https://travis-ci.org/stefankoegl/kdtree.png?branch=master)](https://travis-ci.org/stefankoegl/kdtree)
 ==========================
 
 The kdtree package can construct, modify and search
