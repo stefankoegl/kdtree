@@ -1,0 +1,4 @@
+include AUTHORS
+include COPYING
+include readme.md
+include test.py
