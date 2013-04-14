@@ -6,14 +6,15 @@ This package provides a simple implementation of a kd-tree in Python.
 https://en.wikipedia.org/wiki/K-d_tree
 """
 
+from __future__ import print_function
+
+import math
+from collections import deque
+
 __author__ = 'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.3'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'GNU General Public License v3 or later'
-
-
-import math
-from collections import deque
 
 
 class Node(object):
@@ -166,6 +167,8 @@ class Node(object):
     def __nonzero__(self):
         return self.data is not None
 
+    __bool__ = __nonzero__
+
     def __eq__(self, other):
         if isinstance(other, tuple):
             return self.data == other
@@ -181,7 +184,7 @@ def require_axis(f):
         if None in (self.axis, self.sel_axis):
             raise ValueError('%(func_name) requires the node %(node)s '
                     'to have an axis and a sel_axis function' %
-                    dict(func_name=f.func_name, node=repr(self)))
+                    dict(func_name=f.__name__, node=repr(self)))
 
         return f(self, *args, **kwargs)
 
@@ -403,7 +406,7 @@ class KDNode(Node):
 
             # sort the children, nearer one first
             children = iter(sorted(current.children,
-                key=lambda (c, p): c.axis_dist(point, current.axis)))
+                key=lambda c_p: c_p[0].axis_dist(point, current.axis)))
 
             c1, _ = next(children, (None, None))
             if c1:
@@ -435,7 +438,7 @@ class KDNode(Node):
             best.append(self)
 
         # sort the children, nearer one first (is this really necessairy?)
-        children = sorted(self.children, key=lambda (c, p): c.dist(point))
+        children = sorted(self.children, key=lambda c_p1: c_p1[0].dist(point))
 
         for child, p in children:
             # check if child node needs to be recursed
@@ -469,7 +472,7 @@ class KDNode(Node):
         The child is selected by sel_func which is either min or max
         (or a different function with similar semantics). """
 
-        max_key = lambda (child, parent): child.data[axis]
+        max_key = lambda child_parent: child_parent[0].data[axis]
 
 
         # we don't know our parent, so we include None
@@ -568,14 +571,14 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
     for node in level_order(tree, include_all=True):
 
         if in_level == 0:
-            print
-            print
-            print ' '*left_padding,
+            print()
+            print()
+            print(' '*left_padding, end=' ')
 
         width = int(max_width*node_width/per_level)
 
         node_str = (str(node.data) if node else '').center(width)
-        print node_str,
+        print(node_str, end=' ')
 
         in_level += 1
 
@@ -587,5 +590,5 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
         if level > height:
             break
 
-    print
-    print
+    print()
+    print()
