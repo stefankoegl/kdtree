@@ -1,24 +1,21 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-
 import re
-import os
+import os.path
 
+dirname = os.path.dirname(os.path.abspath(__file__))
+filename = os.path.join(dirname, 'kdtree.py')
+src = open(filename).read()
+metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", src))
+docstrings = re.findall('"""(.*)"""', src)
 
 PACKAGE = 'kdtree'
-SCRIPT_FILE = os.path.join(PACKAGE, '__init__.py')
 
-main_py = open(SCRIPT_FILE).read()
-metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", main_py))
-docstrings = re.findall('"""(.*?)"""', main_py, re.DOTALL)
-
-# List the packages that need to be installed/packaged
-PACKAGES = (
+MODULES = (
         PACKAGE,
 )
 
-# Metadata fields extracted from SCRIPT_FILE
 AUTHOR_EMAIL = metadata['author']
 VERSION = metadata['version']
 WEBSITE = metadata['website']
@@ -40,7 +37,7 @@ setup(name=PACKAGE,
       author_email=EMAIL,
       license=LICENSE,
       url=WEBSITE,
-      packages=PACKAGES,
+      py_modules=MODULES,
       download_url='http://pypi.python.org/packages/source/' + \
         PACKAGE[0] + '/' + PACKAGE + '/' + \
         PACKAGE + '-' + VERSION + '.tar.gz')
