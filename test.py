@@ -154,6 +154,19 @@ class NearestNeighbor(unittest.TestCase):
         self.assertEqual(best_dist, best.dist(point))
 
 
+    def test_search_nn_dist(self):
+        """ tests search_nn_dist() according to bug #8 """
+
+        points = [(x,y) for x in xrange(10) for y in xrange(10)]
+        tree = kdtree.create(points)
+        nn = tree.search_nn_dist((5,5), 2.5)
+
+        self.assertEquals(len(nn), 4)
+        self.assertIn( (6,6), nn)
+        self.assertIn( (5,5), nn)
+        self.assertIn( (5,6), nn)
+        self.assertIn( (6,5), nn)
+
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
     points = list(islice(random_points(), 0, nodes))

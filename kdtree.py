@@ -442,7 +442,7 @@ class KDNode(Node):
 
         for child, p in children:
             # check if child node needs to be recursed
-            if self.axis_dist(point, self.axis) < distance:
+            if self.axis_dist(point, self.axis) < math.pow(distance, 2):
                 child.search_nn_dist(point, distance, best)
 
         return best
