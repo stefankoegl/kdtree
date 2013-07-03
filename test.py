@@ -162,10 +162,10 @@ class NearestNeighbor(unittest.TestCase):
         nn = tree.search_nn_dist((5,5), 2.5)
 
         self.assertEquals(len(nn), 4)
-        self.assertIn( (6,6), nn)
-        self.assertIn( (5,5), nn)
-        self.assertIn( (5,6), nn)
-        self.assertIn( (6,5), nn)
+        self.assertTrue( (6,6) in nn)
+        self.assertTrue( (5,5) in nn)
+        self.assertTrue( (5,6) in nn)
+        self.assertTrue( (6,5) in nn)
 
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
