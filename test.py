@@ -157,7 +157,7 @@ class NearestNeighbor(unittest.TestCase):
     def test_search_nn_dist(self):
         """ tests search_nn_dist() according to bug #8 """
 
-        points = [(x,y) for x in xrange(10) for y in xrange(10)]
+        points = [(x,y) for x in range(10) for y in range(10)]
         tree = kdtree.create(points)
         nn = tree.search_nn_dist((5,5), 2.5)
 
