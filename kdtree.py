@@ -283,66 +283,64 @@ class KDNode(Node):
         if not self:
             return
 
+        # Recursion has not yet reached the node to be deleted
+        if self.data != point:
 
-        # Recursion has reached the node to be deleted
-        if self.data == point:
-
-            if self.is_leaf:
-                self.data = None
-                return self
-
-            else:
-                # find a replacement for the node (will be the new subtree-root)
-                root, max_p = self.find_replacement()
-
-                pos = max_p.get_child_pos(root)
-
-                # self and root swap positions
-                tmp_l, tmp_r = self.left, self.right
-                self.left, self.right = root.left, root.right
-                root.left, root.right = tmp_l if tmp_l is not root else self, tmp_r if tmp_r is not root else self
-                self.axis, root.axis = root.axis, self.axis
-
-
-                # Special-case if we have chosen a direct child as the replacement
-                if max_p is not self:
-                    max_p.set_child(pos, self)
-                    new_depth = max_p.height()
-                    max_p.remove(self.data)
+            # Remove direct subnode
+            if self.left and self.left.data == point:
+                if self.left.is_leaf:
+                    self.left = None
 
                 else:
-                    root.remove(self.data)
+                    self.left = self.left.remove(point)
 
-                return root
+            elif self.right and self.right.data == point:
+                if self.right.is_leaf:
+                    self.right = None
 
+                else:
+                    self.right = self.right.remove(point)
 
-        # Remove direct subnode
-        if self.left and self.left.data == point:
-            if self.left.is_leaf:
-                self.left = None
+            # Recurse to subtrees
+            if point[self.axis] <= self.data[self.axis]:
+                if self.left:
+                    self.left = self.left.remove(point)
 
-            else:
-                self.left = self.left.remove(point)
+            if point[self.axis] >= self.data[self.axis]:
+                if self.right:
+                    self.right = self.right.remove(point)
 
+            return self
 
-        elif self.right and self.right.data == point:
-            if self.right.is_leaf:
-                self.right = None
+        # we have reached the node to be deleted here
 
-            else:
-                self.right = self.right.remove(point)
+        # deleting a leaf node is trivial
+        if self.is_leaf:
+            self.data = None
+            return self
 
+        # we have to delete a non-leaf node here
 
-        # Recurse to subtrees
-        if point[self.axis] <= self.data[self.axis]:
-            if self.left:
-                self.left = self.left.remove(point)
+        # find a replacement for the node (will be the new subtree-root)
+        root, max_p = self.find_replacement()
 
-        if point[self.axis] >= self.data[self.axis]:
-            if self.right:
-                self.right = self.right.remove(point)
+        pos = max_p.get_child_pos(root)
 
-        return self
+        # self and root swap positions
+        tmp_l, tmp_r = self.left, self.right
+        self.left, self.right = root.left, root.right
+        root.left, root.right = tmp_l if tmp_l is not root else self, tmp_r if tmp_r is not root else self
+        self.axis, root.axis = root.axis, self.axis
+
+        # Special-case if we have chosen a direct child as the replacement
+        if max_p is not self:
+            max_p.set_child(pos, self)
+            max_p.remove(point)
+
+        else:
+            root.remove(point)
+
+        return root
 
 
     @property
