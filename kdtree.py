@@ -283,27 +283,31 @@ class KDNode(Node):
         if not self:
             return
 
-        # Recursion has not yet reached the node to be deleted
-        if self.data != point:
+        # Recursion has reached the node to be deleted
+        if self.data == point:
+            return self._remove(point)
 
-            # Remove direct subnode
-            if self.left and self.left.data == point:
+        # Remove direct subnode
+        if self.left and self.left.data == point:
+            self.left = self.left._remove(point)
+
+        elif self.right and self.right.data == point:
+            self.right = self.right._remove(point)
+
+        # Recurse to subtrees
+        if point[self.axis] <= self.data[self.axis]:
+            if self.left:
                 self.left = self.left.remove(point)
 
-            elif self.right and self.right.data == point:
+        if point[self.axis] >= self.data[self.axis]:
+            if self.right:
                 self.right = self.right.remove(point)
 
-            # Recurse to subtrees
-            if point[self.axis] <= self.data[self.axis]:
-                if self.left:
-                    self.left = self.left.remove(point)
+        return self
 
-            if point[self.axis] >= self.data[self.axis]:
-                if self.right:
-                    self.right = self.right.remove(point)
 
-            return self
-
+    @require_axis
+    def _remove(self, point):
         # we have reached the node to be deleted here
 
         # deleting a leaf node is trivial
