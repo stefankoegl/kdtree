@@ -21,6 +21,28 @@ except ImportError:
 class RemoveTest(unittest.TestCase):
 
 
+    def test_remove_duplicates(self):
+        """ creates a tree with only duplicate points, and removes them all """
+
+        points = [(1,1)] * 100
+        tree = kdtree.create(points)
+        self.assertTrue(tree.is_valid())
+
+        random.shuffle(points)
+        while points:
+            point = points.pop(0)
+
+            tree = tree.remove(point)
+
+            # Check if the Tree is valid after the removal
+            self.assertTrue(tree.is_valid())
+
+            # Check if the removal reduced the number of nodes by 1 (not more, not less)
+            remaining_points = len(points)
+            nodes_in_tree = len(list(tree.inorder()))
+            self.assertEqual(nodes_in_tree, remaining_points)
+
+
     def test_remove(self, num=100):
         """ Tests random removal from a tree, multiple times """
 
