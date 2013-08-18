@@ -320,16 +320,15 @@ class KDNode(Node):
         # find a replacement for the node (will be the new subtree-root)
         root, max_p = self.find_replacement()
 
-        pos = max_p.get_child_pos(root)
-
         # self and root swap positions
         tmp_l, tmp_r = self.left, self.right
         self.left, self.right = root.left, root.right
         root.left, root.right = tmp_l if tmp_l is not root else self, tmp_r if tmp_r is not root else self
         self.axis, root.axis = root.axis, self.axis
 
-        # Special-case if we have chosen a direct child as the replacement
+        # Special-case if we have not chosen a direct child as the replacement
         if max_p is not self:
+            pos = max_p.get_child_pos(root)
             max_p.set_child(pos, self)
             max_p.remove(point)
 
