@@ -14,7 +14,7 @@ from collections import deque
 __author__ = 'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.6'
 __website__ = 'https://github.com/stefankoegl/kdtree'
-__license__ = 'GNU General Public License v3 or later'
+__license__ = 'ISC license'
 
 
 class Node(object):
