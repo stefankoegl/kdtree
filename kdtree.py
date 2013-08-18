@@ -288,18 +288,10 @@ class KDNode(Node):
 
             # Remove direct subnode
             if self.left and self.left.data == point:
-                if self.left.is_leaf:
-                    self.left = None
-
-                else:
-                    self.left = self.left.remove(point)
+                self.left = self.left.remove(point)
 
             elif self.right and self.right.data == point:
-                if self.right.is_leaf:
-                    self.right = None
-
-                else:
-                    self.right = self.right.remove(point)
+                self.right = self.right.remove(point)
 
             # Recurse to subtrees
             if point[self.axis] <= self.data[self.axis]:
