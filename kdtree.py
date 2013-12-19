@@ -10,6 +10,7 @@ from __future__ import print_function
 
 import math
 from collections import deque
+from functools import wraps
 
 __author__ = 'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.6'
@@ -180,6 +181,7 @@ class Node(object):
 def require_axis(f):
     """ Check if the object of the function has axis and sel_axis members """
 
+    @wraps(f)
     def _wrapper(self, *args, **kwargs):
         if None in (self.axis, self.sel_axis):
             raise ValueError('%(func_name) requires the node %(node)s '
