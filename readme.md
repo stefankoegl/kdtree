@@ -4,6 +4,14 @@ A simple kd-tree in Python [![Build Status](https://travis-ci.org/stefankoegl/kd
 The kdtree package can construct, modify and search
 [kd-trees](http://en.wikipedia.org/wiki/Kd-tree).
 
+* Website: https://github.com/stefankoegl/kdtree
+* Repository: https://github.com/stefankoegl/kdtree.git
+* Documentation: https://python-kdtree.readthedocs.org/
+* PyPI: https://pypi.python.org/pypi/kdtree
+* Travis-CI: https://travis-ci.org/stefankoegl/kdtree
+* Coveralls: https://coveralls.io/r/stefankoegl/kdtree
+
+
 Usage
 -----
 
