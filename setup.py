@@ -29,6 +29,25 @@ else:
 # Extract name and e-mail ("Firstname Lastname <mail@example.org>")
 AUTHOR, EMAIL = re.match(r'(.*) <(.*)>', AUTHOR_EMAIL).groups()
 
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: ISC License (ISCL)',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Topic :: Software Development :: Libraries',
+    'Topic :: Utilities',
+]
+
+
 setup(name=PACKAGE,
       version=VERSION,
       description=DESCRIPTION,
@@ -40,4 +59,6 @@ setup(name=PACKAGE,
       py_modules=MODULES,
       download_url='http://pypi.python.org/packages/source/' + \
         PACKAGE[0] + '/' + PACKAGE + '/' + \
-        PACKAGE + '-' + VERSION + '.tar.gz')
+        PACKAGE + '-' + VERSION + '.tar.gz',
+      classifiers=CLASSIFIERS,
+)
