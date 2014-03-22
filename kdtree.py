@@ -1,4 +1,5 @@
-# -*- coding: latin-1 -*-
+﻿# -*- coding: utf-8 -*-
+
 
 """A Python implemntation of a kd-tree
 
@@ -13,7 +14,7 @@ import math
 from collections import deque
 from functools import wraps
 
-__author__ = 'Stefan Kögl <stefan@skoegl.net>'
+__author__ = u'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.7'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
