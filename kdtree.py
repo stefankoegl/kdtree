@@ -8,6 +8,7 @@ https://en.wikipedia.org/wiki/K-d_tree
 
 from __future__ import print_function
 
+import operator
 import math
 from collections import deque
 from functools import wraps
@@ -16,6 +17,13 @@ __author__ = 'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.6'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
+
+
+# maps child position to its comparison operator
+COMPARE_CHILD = {
+    0: (operator.le, operator.sub),
+    1: (operator.ge, operator.add),
+}
 
 
 class Node(object):
@@ -176,6 +184,8 @@ class Node(object):
         else:
             return self.data == other.data
 
+    def __hash__(self):
+        return hash(self.data)
 
 
 def require_axis(f):
@@ -392,6 +402,104 @@ class KDNode(Node):
         return sum([self.axis_dist(point, i) for i in r])
 
 
+    def search_knn(self, point, k):
+        """ Return the k nearest neighbors of point
+
+        point must be an actual point, not a node """
+
+        results = set()
+
+        prev = None
+        current = self
+        get_dist = lambda n: n.dist(point)
+
+        # the nodes do not keep a reference to their parents
+        parents = {current: None}
+
+        # go down the tree as we would for inserting
+        while current:
+            if point[current.axis] < current.data[current.axis]:
+                # left side
+                parents[current.left] = current
+                prev = current
+                current = current.left
+            else:
+                # right side
+                parents[current.right] = current
+                prev = current
+                current = current.right
+
+        if not prev:
+            return []
+
+        examined = set()
+
+        # Go up the tree, looking for better solutions
+        current = prev
+        while current:
+            # search node and update results
+            current._search_node(point, k, results, examined, get_dist)
+            current = parents[current]
+
+        return sorted(results, key=get_dist)
+
+
+    def _search_node(self, point, k, results, examined, get_dist):
+        examined.add(self)
+
+        # get current best
+        bestNode = next(iter(sorted(results, key=get_dist)), None)
+        bestDist = get_dist(bestNode) if bestNode is not None else float('inf')
+
+        # If the current node is closer than the current best, then it
+        # becomes the current best.
+        nodeDist = get_dist(self)
+        if nodeDist < bestDist:
+            if len(results) == k and bestNode:
+               results.remove(bestNode)
+
+            results.add(self)
+
+        # if we're equal to the current best, add it, regardless of k
+        elif nodeDist == bestDist:
+            results.add(self)
+
+        # if we don't have k results yet, add it anyway
+        elif len(results) < k:
+            results.add(self)
+
+        # get new best
+        bestNode = next(iter(sorted(results, key=get_dist)))
+        bestDist = get_dist(bestNode)
+
+        # Check whether there could be any points on the other side of the
+        # splitting plane that are closer to the search point than the current
+        # best.
+        for child, pos in self.children:
+            if child in examined:
+                continue
+
+            examined.add(child)
+            compare, combine = COMPARE_CHILD[pos]
+
+            # Since the hyperplanes are all axis-aligned this is implemented
+            # as a simple comparison to see whether the difference between the
+            # splitting coordinate of the search point and current node is less
+            # than the distance (overall coordinates) from the search point to
+            # the current best.
+            nodePoint = self.data[self.axis]
+            pointPlusDist = combine(point[self.axis], bestDist)
+            lineIntersects = compare(pointPlusDist, nodePoint)
+
+            # If the hypersphere crosses the plane, there could be nearer
+            # points on the other side of the plane, so the algorithm must move
+            # down the other branch of the tree from the current node looking
+            # for closer points, following the same recursive process as the
+            # entire search.
+            if lineIntersects:
+                child._search_node(point, k, results, examined, get_dist)
+
+
     @require_axis
     def search_nn(self, point, best=None):
         """
@@ -401,30 +509,8 @@ class KDNode(Node):
         returned. If a location of an actual node is used, the Node with this
         location will be retuend (not its neighbor) """
 
-        current = self
-        while True:
-            if best is None:
-                best = current
+        return next(iter(self.search_knn(point, 1)), None)
 
-            # consider the current node
-            if current.dist(point) < best.dist(point):
-                best = current
-
-            # sort the children, nearer one first
-            children = iter(sorted(current.children,
-                key=lambda c_p: c_p[0].axis_dist(point, current.axis)))
-
-            c1, _ = next(children, (None, None))
-            if c1:
-                current = c1
-                continue
-
-            c2, _ = next(children, (None, None))
-            if c2 and current.axis_dist(point, current.axis) < best.dist(point):
-                current = c2
-                continue
-
-            return best
 
     @require_axis
     def search_nn_dist(self, point, distance, best=None):
