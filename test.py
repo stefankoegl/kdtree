@@ -7,6 +7,7 @@ import random
 import logging
 import unittest
 import doctest
+import collections
 from itertools import islice
 
 import kdtree
@@ -232,6 +233,21 @@ class NearestNeighbor(unittest.TestCase):
         self.assertTrue( (5,5) in nn)
         self.assertTrue( (5,6) in nn)
         self.assertTrue( (6,5) in nn)
+
+
+class PointTypeTests(unittest.TestCase):
+    """ test using different types as points """
+
+    def test_point_types(self):
+        emptyTree = kdtree.create(dimensions=3)
+        point1 = (2, 3, 4)
+        point2 = [4, 5, 6]
+        Point = collections.namedtuple('Point', 'x y z')
+        point3 = Point(5, 3, 2)
+        tree = kdtree.create([point1, point2, point3])
+        res = tree.search_nn( (1, 2, 3) )
+
+        self.assertEqual(res, kdtree.KDNode( (2, 3, 4) ))
 
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):

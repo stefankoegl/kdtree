@@ -186,7 +186,11 @@ class Node(object):
             return self.data == other.data
 
     def __hash__(self):
-        return hash(self.data)
+        try:
+            return hash(self.data)
+        except TypeError:
+            # try to hash un-hashable types as tuples
+            return hash(tuple(self.data))
 
 
 def require_axis(f):
