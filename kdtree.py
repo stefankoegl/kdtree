@@ -419,18 +419,18 @@ class KDNode(Node):
         get_dist = lambda n: n.dist(point)
 
         # the nodes do not keep a reference to their parents
-        parents = {current: None}
+        parents = {id(current): None}
 
         # go down the tree as we would for inserting
         while current:
             if point[current.axis] < current.data[current.axis]:
                 # left side
-                parents[current.left] = current
+                parents[id(current.left)] = current
                 prev = current
                 current = current.left
             else:
                 # right side
-                parents[current.right] = current
+                parents[id(current.right)] = current
                 prev = current
                 current = current.right
 
@@ -444,7 +444,7 @@ class KDNode(Node):
         while current:
             # search node and update results
             current._search_node(point, k, results, examined, get_dist)
-            current = parents[current]
+            current = parents[id(current)]
 
         return sorted(results, key=get_dist)
 
