@@ -186,11 +186,7 @@ class Node(object):
             return self.data == other.data
 
     def __hash__(self):
-        try:
-            return hash(self.data)
-        except TypeError:
-            # try to hash un-hashable types as tuples
-            return hash(tuple(self.data))
+        return id(self)
 
 
 def require_axis(f):
@@ -407,30 +403,42 @@ class KDNode(Node):
         return sum([self.axis_dist(point, i) for i in r])
 
 
-    def search_knn(self, point, k):
-        """ Return the k nearest neighbors of point
+    def search_knn(self, point, k, dist=None):
+        """ Return the k nearest neighbors of point and their distances
 
-        point must be an actual point, not a node """
+        point must be an actual point, not a node.
 
-        results = set()
+        k is the number of results to return. The actual results can be less
+        (if there aren't more nodes to return) or more in case of equal
+        distances.
+
+        dist is a distance function, expecting two points and returning a
+        distance value. Distance values can be any compareable type.
+
+        The result is an ordered list of (node, distance) tuples.
+        """
 
         prev = None
         current = self
-        get_dist = lambda n: n.dist(point)
+
+        if dist is None:
+            get_dist = lambda n: n.dist(point)
+        else:
+            get_dist = lambda n: dist(n.data, point)
 
         # the nodes do not keep a reference to their parents
-        parents = {id(current): None}
+        parents = {current: None}
 
         # go down the tree as we would for inserting
         while current:
             if point[current.axis] < current.data[current.axis]:
                 # left side
-                parents[id(current.left)] = current
+                parents[current.left] = current
                 prev = current
                 current = current.left
             else:
                 # right side
-                parents[id(current.right)] = current
+                parents[current.right] = current
                 prev = current
                 current = current.right
 
@@ -438,40 +446,46 @@ class KDNode(Node):
             return []
 
         examined = set()
+        results = {}
 
         # Go up the tree, looking for better solutions
         current = prev
         while current:
             # search node and update results
             current._search_node(point, k, results, examined, get_dist)
-            current = parents[id(current)]
+            current = parents[current]
 
-        return sorted(results, key=get_dist)
+        BY_VALUE = lambda kv: kv[1]
+        return sorted(results.items(), key=BY_VALUE)
 
 
     def _search_node(self, point, k, results, examined, get_dist):
         examined.add(self)
 
         # get current best
-        bestNode = next(iter(sorted(results, key=get_dist)), None)
-        bestDist = get_dist(bestNode) if bestNode is not None else float('inf')
+        if not results:
+            bestNode = None
+            bestDist = float('inf')
+
+        else:
+            bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1])[0]
 
         # If the current node is closer than the current best, then it
         # becomes the current best.
         nodeDist = get_dist(self)
         if nodeDist < bestDist:
             if len(results) == k and bestNode:
-               results.remove(bestNode)
+               results.pop(bestNode)
 
-            results.add(self)
+            results[self] = nodeDist
 
         # if we're equal to the current best, add it, regardless of k
         elif nodeDist == bestDist:
-            results.add(self)
+            results[self] = nodeDist
 
         # if we don't have k results yet, add it anyway
         elif len(results) < k:
-            results.add(self)
+            results[self] = nodeDist
 
         # get new best
         bestNode = next(iter(sorted(results, key=get_dist)))
@@ -506,15 +520,21 @@ class KDNode(Node):
 
 
     @require_axis
-    def search_nn(self, point, best=None):
+    def search_nn(self, point, dist=None):
         """
         Search the nearest node of the given point
 
-        point must be a location, not a node. The nearest node to the point is
-        returned. If a location of an actual node is used, the Node with this
-        location will be retuend (not its neighbor) """
+        point must be an actual point, not a node. The nearest node to the
+        point is returned. If a location of an actual node is used, the Node
+        with this location will be returned (not its neighbor).
 
-        return next(iter(self.search_knn(point, 1)), None)
+        dist is a distance function, expecting two points and returning a
+        distance value. Distance values can be any compareable type.
+
+        The result is a (node, distance) tuple.
+        """
+
+        return next(iter(self.search_knn(point, 1, dist)), None)
 
 
     @require_axis

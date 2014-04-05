@@ -163,9 +163,9 @@ class NearestNeighbor(unittest.TestCase):
         tree = kdtree.create(points)
         point = random_point()
 
-        nn = tree.search_nn(point)
+        nn, dist = tree.search_nn(point)
         best, best_dist = self.find_best(tree, point)
-        self.assertEqual(best_dist, nn.dist(point), msg=', '.join(repr(p) for p in points) + ' / ' + repr(point))
+        self.assertEqual(best_dist, dist, msg=', '.join(repr(p) for p in points) + ' / ' + repr(point))
 
 
     def test_search_nn2(self):
@@ -174,9 +174,9 @@ class NearestNeighbor(unittest.TestCase):
         tree = kdtree.create(points)
         point = (2,5,6)
 
-        nn = tree.search_nn(point)
+        nn, dist = tree.search_nn(point)
         best, best_dist = self.find_best(tree, point)
-        self.assertEqual(best_dist, nn.dist(point))
+        self.assertEqual(best_dist, dist)
 
 
     def test_search_nn3(self):
@@ -205,9 +205,9 @@ class NearestNeighbor(unittest.TestCase):
         tree = kdtree.create(points)
         point = (66, 54, 29)
 
-        nn = tree.search_nn(point)
+        nn, dist = tree.search_nn(point)
         best, best_dist = self.find_best(tree, point)
-        self.assertEqual(best_dist, nn.dist(point))
+        self.assertEqual(best_dist, dist)
 
 
 
@@ -235,6 +235,26 @@ class NearestNeighbor(unittest.TestCase):
         self.assertTrue( (6,5) in nn)
 
 
+    def test_search_nn_dist_random(self):
+
+        for n in range(50):
+            tree = random_tree()
+            point = random_point()
+            points = tree.inorder()
+
+            points = sorted(points, key=lambda p: p.dist(point))
+
+            for p in points:
+                dist = p.dist(point)
+                nn = tree.search_nn_dist(point, dist)
+
+                for pn in points:
+                    if pn in nn:
+                        self.assertTrue(pn.dist(point) < dist, '%s in %s but %s < %s' % (pn, nn, pn.dist(point), dist))
+                    else:
+                        self.assertTrue(pn.dist(point) >= dist, '%s not in %s but %s >= %s' % (pn, nn, pn.dist(point), dist))
+
+
 class PointTypeTests(unittest.TestCase):
     """ test using different types as points """
 
@@ -245,7 +265,7 @@ class PointTypeTests(unittest.TestCase):
         Point = collections.namedtuple('Point', 'x y z')
         point3 = Point(5, 3, 2)
         tree = kdtree.create([point1, point2, point3])
-        res = tree.search_nn( (1, 2, 3) )
+        res, dist = tree.search_nn( (1, 2, 3) )
 
         self.assertEqual(res, kdtree.KDNode( (2, 3, 4) ))
 
