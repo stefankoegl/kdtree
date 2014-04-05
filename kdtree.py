@@ -15,7 +15,7 @@ from collections import deque
 from functools import wraps
 
 __author__ = u'Stefan Kögl <stefan@skoegl.net>'
-__version__ = '0.9'
+__version__ = '0.10'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
 
