@@ -13,6 +13,7 @@ import operator
 import math
 from collections import deque
 from functools import wraps
+from BoundedPriorityQueue import BoundedPriorityQueue
 
 __author__ = u'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.10'
@@ -25,7 +26,6 @@ COMPARE_CHILD = {
     0: (operator.le, operator.sub),
     1: (operator.ge, operator.add),
 }
-
 
 class Node(object):
     """ A Node in a kd-tree
@@ -237,9 +237,10 @@ class KDNode(Node):
 
         current = self
         while True:
+            # If one of the points doesn't have the same dim, raise an error.
             check_dimensionality([point], dimensions=current.dimensions)
 
-            # Adding has hit an empty leaf-node, add here
+            # Adding has hit an empty leaf-node, add here.
             if current.data is None:
                 current.data = point
                 break
@@ -247,11 +248,13 @@ class KDNode(Node):
             # split on self.axis, recurse either left or right
             if point[current.axis] < current.data[current.axis]:
                 if current.left is None:
+                    # We add the point and break.
                     current.left = current.create_subnode(point)
                     break
                 else:
+                    # We iterate over the point current and go back at the beginning of while.
                     current = current.left
-                    #self.left.add(point)
+                    #self.left.add(point) NO NEED FOR THIS!!!
             else:
                 if current.right is None:
                     current.right = current.create_subnode(point)
@@ -264,6 +267,7 @@ class KDNode(Node):
     def create_subnode(self, data):
         """ Creates a subnode for the current node """
 
+        # IT WILL PROBABLY CREATE A KDNODE.
         return self.__class__(data,
                 axis=self.sel_axis(self.axis),
                 sel_axis=self.sel_axis,
@@ -399,6 +403,7 @@ class KDNode(Node):
         Squared distance between the current Node
         and the given point
         """
+        # r=[0,1,2] or r=[0,1]
         r = range(len(self.data))
         return sum([self.axis_dist(point, i) for i in r])
 
@@ -421,6 +426,7 @@ class KDNode(Node):
         prev = None
         current = self
 
+        # If a distance function is provided, use it, otherwise use the default Euclidean distance (Pow((x2-x1),2) + ...)
         if dist is None:
             get_dist = lambda n: n.dist(point)
         else:
@@ -430,6 +436,8 @@ class KDNode(Node):
         parents = {current: None}
 
         # go down the tree as we would for inserting
+        # JO: Similar to if (current == null)
+        # I think here we search for the test point.
         while current:
             if point[current.axis] < current.data[current.axis]:
                 # left side
@@ -446,7 +454,7 @@ class KDNode(Node):
             return []
 
         examined = set()
-        results = {}
+        results = BoundedPriorityQueue(k)
 
         # Go up the tree, looking for better solutions
         current = prev
@@ -454,42 +462,51 @@ class KDNode(Node):
             # search node and update results
             current._search_node(point, k, results, examined, get_dist)
             current = parents[current]
-
+        
+        # We sort the final result by the distance in the tuple (<KdNode>, distance)
         BY_VALUE = lambda kv: kv[1]
+        
         return sorted(results.items(), key=BY_VALUE)
-
 
     def _search_node(self, point, k, results, examined, get_dist):
         examined.add(self)
-
+        
         # get current best
-        if not results:
-            bestNode = None
-            bestDist = float('inf')
-
-        else:
-            bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1])[0]
+        ##if results.size() == 0:
+        ##    bestNode = None
+        ##    bestDist = float('inf')
+        ##
+        ##else:
+        ##    bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1])[0]
 
         # If the current node is closer than the current best, then it
         # becomes the current best.
+        # self.distance(point) (when self is current).
         nodeDist = get_dist(self)
-        if nodeDist < bestDist:
-            if len(results) == k and bestNode:
-               results.pop(bestNode)
+        # Here it should be the priority queue logic:
+        results.add((self, nodeDist))
+        
+        
+        
+        ###if nodeDist < bestDist:
+        ###    if len(results) == k and bestNode:
+        ###       results.pop(bestNode)
+        ###
+        ###    results[self] = nodeDist
+        ###
+        #### if we're equal to the current best, add it, regardless of k
+        ###elif nodeDist == bestDist:
+        ###    results[self] = nodeDist
+        ###
+        #### if we don't have k results yet, add it anyway
+        ###elif len(results) < k:
+        ###    results[self] = nodeDist
 
-            results[self] = nodeDist
+        
 
-        # if we're equal to the current best, add it, regardless of k
-        elif nodeDist == bestDist:
-            results[self] = nodeDist
-
-        # if we don't have k results yet, add it anyway
-        elif len(results) < k:
-            results[self] = nodeDist
-
-        # get new best
-        bestNode = next(iter(sorted(results, key=get_dist)))
-        bestDist = get_dist(bestNode)
+        ## get new best
+        ##bestNode = next(iter(sorted(results, key=get_dist)))
+        bestDist = results.max()
 
         # Check whether there could be any points on the other side of the
         # splitting plane that are closer to the search point than the current
@@ -515,7 +532,7 @@ class KDNode(Node):
             # down the other branch of the tree from the current node looking
             # for closer points, following the same recursive process as the
             # entire search.
-            if lineIntersects:
+            if lineIntersects or results.size() < k:
                 child._search_node(point, k, results, examined, get_dist)
 
 
