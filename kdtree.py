@@ -13,7 +13,7 @@ import operator
 import math
 from collections import deque
 from functools import wraps
-from BoundedPriorityQueue import BoundedPriorityQueue
+from bounded_priority_queue import BoundedPriorityQueue
 
 __author__ = u'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.10'
@@ -254,7 +254,7 @@ class KDNode(Node):
                 else:
                     # We iterate over the point current and go back at the beginning of while.
                     current = current.left
-                    #self.left.add(point) NO NEED FOR THIS!!!
+                    #self.left.add(point)
             else:
                 if current.right is None:
                     current.right = current.create_subnode(point)
@@ -470,43 +470,19 @@ class KDNode(Node):
 
     def _search_node(self, point, k, results, examined, get_dist):
         examined.add(self)
-        
-        # get current best
-        ##if results.size() == 0:
-        ##    bestNode = None
-        ##    bestDist = float('inf')
-        ##
-        ##else:
-        ##    bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1])[0]
 
         # If the current node is closer than the current best, then it
         # becomes the current best.
         # self.distance(point) (when self is current).
         nodeDist = get_dist(self)
-        # Here it should be the priority queue logic:
+        
+        # The bounded priority queue has all the logic inside of it.
+        # For more info see BoundedPriorityQueue add function
         results.add((self, nodeDist))
-        
-        
-        
-        ###if nodeDist < bestDist:
-        ###    if len(results) == k and bestNode:
-        ###       results.pop(bestNode)
-        ###
-        ###    results[self] = nodeDist
-        ###
-        #### if we're equal to the current best, add it, regardless of k
-        ###elif nodeDist == bestDist:
-        ###    results[self] = nodeDist
-        ###
-        #### if we don't have k results yet, add it anyway
-        ###elif len(results) < k:
-        ###    results[self] = nodeDist
 
-        
-
-        ## get new best
-        ##bestNode = next(iter(sorted(results, key=get_dist)))
-        bestDist = results.max()
+        # Fetch the biggest distance from the BPQ.
+        # This is used tu check besides if: abs(point[axis] - nodePoint[axis]) < maxDistance)
+        maxDist = results.max()
 
         # Check whether there could be any points on the other side of the
         # splitting plane that are closer to the search point than the current
@@ -524,7 +500,7 @@ class KDNode(Node):
             # than the distance (overall coordinates) from the search point to
             # the current best.
             nodePoint = self.data[self.axis]
-            pointPlusDist = combine(point[self.axis], bestDist)
+            pointPlusDist = combine(point[self.axis], maxDist)
             lineIntersects = compare(pointPlusDist, nodePoint)
 
             # If the hypersphere crosses the plane, there could be nearer
@@ -532,6 +508,8 @@ class KDNode(Node):
             # down the other branch of the tree from the current node looking
             # for closer points, following the same recursive process as the
             # entire search.
+            # The results.size() < k (BPQ isn't full) is critical because if we prune out parts of the tree before we have made
+            # at least k guesses, we might accidentally throw out one of the closest points.
             if lineIntersects or results.size() < k:
                 child._search_node(point, k, results, examined, get_dist)
 

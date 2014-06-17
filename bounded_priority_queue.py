@@ -72,6 +72,7 @@ class BoundedPriorityQueue:
             self.heap[index], self.heap[self.parent(index)] = self.heap[self.parent(index)], self.heap[index]
             index = self.parent(index)
 
+    # Here is the whole logic of the Bounded Priority queue. 
     def add(self, obj):
         # If number of elements == k and new element < max_elem:
         #   extract_max and add the new element.
@@ -82,16 +83,15 @@ class BoundedPriorityQueue:
         # Size == k, The priority queue is at capacity.
         if size == self.k:
             max_elem = self.max()
-            #print max_elem
-            #print "obj[1]" + str(obj[1])
+            
             # The new element has a lower distance than the biggest one.
             # Then we insert, otherwise, don't insert.
             if obj[1] < max_elem:
                 self.extract_max()
                 self.heap_append(obj)
             
-        # Edge case, nothing 
-        else: # if size == 0 or 0 < Size < k
+        # if size == 0 or 0 < Size < k
+        else: 
             self.heap_append(obj)
                 
 
@@ -128,6 +128,7 @@ class BoundedPriorityQueue:
                 break
 
 if __name__ == '__main__':
+    # For test purposes.
     # Create the heap object
     m = BoundedPriorityQueue(5)
     print "Initial heap:", m.heap
