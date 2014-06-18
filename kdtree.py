@@ -207,8 +207,8 @@ def require_axis(f):
 
 class KDNode(Node):
     """ A Node that contains kd-tree specific data and methods """
-
-
+    
+    
     def __init__(self, data=None, left=None, right=None, axis=None,
             sel_axis=None, dimensions=None):
         """ Creates a new node for a kd-tree
@@ -404,7 +404,7 @@ class KDNode(Node):
         and the given point
         """
         # r=[0,1,2] or r=[0,1]
-        r = range(len(self.data))
+        r = range(self.dimensions)
         return sum([self.axis_dist(point, i) for i in r])
 
 
@@ -438,38 +438,40 @@ class KDNode(Node):
         # go down the tree as we would for inserting
         # JO: Similar to if (current == null)
         # I think here we search for the test point.
-        while current:
-            if point[current.axis] < current.data[current.axis]:
-                # left side
-                parents[current.left] = current
-                prev = current
-                current = current.left
-            else:
-                # right side
-                parents[current.right] = current
-                prev = current
-                current = current.right
-
-        if not prev:
-            return []
+        ######while current:
+        ######    if point[current.axis] < current.data[current.axis]:
+        ######        # left side
+        ######        parents[current.left] = current
+        ######        prev = current
+        ######        current = current.left
+        ######    else:
+        ######        # right side
+        ######        parents[current.right] = current
+        ######        prev = current
+        ######        current = current.right
+        ######
+        ######if not prev:
+        ######    return []
 
         examined = set()
         results = BoundedPriorityQueue(k)
 
         # Go up the tree, looking for better solutions
-        current = prev
-        while current:
-            # search node and update results
-            current._search_node(point, k, results, examined, get_dist)
-            current = parents[current]
+        ####current = prev
+        ####while current:
+        # search node and update results
+        current._search_node(point, k, results, examined, get_dist)
+            #current = parents[current]
         
         # We sort the final result by the distance in the tuple (<KdNode>, distance)
         BY_VALUE = lambda kv: kv[1]
-        
+        print ("Visited " + str(len(examined)) + " nodes.")
         return sorted(results.items(), key=BY_VALUE)
-
+    
     def _search_node(self, point, k, results, examined, get_dist):
-        examined.add(self)
+        if not self:
+            return
+        #examined.add(self)
 
         # If the current node is closer than the current best, then it
         # becomes the current best.
@@ -479,40 +481,26 @@ class KDNode(Node):
         # The bounded priority queue has all the logic inside of it.
         # For more info see BoundedPriorityQueue add function
         results.add((self, nodeDist))
-
+        
+        if point[self.axis] < self.data[self.axis]:
+            self.left._search_node(point, k, results, examined, get_dist)
+        else:
+            self.right._search_node(point, k, results, examined, get_dist)
+        
         # Fetch the biggest distance from the BPQ.
         # This is used tu check besides if: abs(point[axis] - nodePoint[axis]) < maxDistance)
         maxDist = results.max()
-
+        
+        absoluteDistance = abs(self.data[self.axis] - point[self.axis])
+        
         # Check whether there could be any points on the other side of the
         # splitting plane that are closer to the search point than the current
         # best.
-        for child, pos in self.children:
-            if child in examined:
-                continue
-
-            examined.add(child)
-            compare, combine = COMPARE_CHILD[pos]
-
-            # Since the hyperplanes are all axis-aligned this is implemented
-            # as a simple comparison to see whether the difference between the
-            # splitting coordinate of the search point and current node is less
-            # than the distance (overall coordinates) from the search point to
-            # the current best.
-            nodePoint = self.data[self.axis]
-            pointPlusDist = combine(point[self.axis], maxDist)
-            lineIntersects = compare(pointPlusDist, nodePoint)
-
-            # If the hypersphere crosses the plane, there could be nearer
-            # points on the other side of the plane, so the algorithm must move
-            # down the other branch of the tree from the current node looking
-            # for closer points, following the same recursive process as the
-            # entire search.
-            # The results.size() < k (BPQ isn't full) is critical because if we prune out parts of the tree before we have made
-            # at least k guesses, we might accidentally throw out one of the closest points.
-            if lineIntersects or results.size() < k:
-                child._search_node(point, k, results, examined, get_dist)
-
+        if absoluteDistance < maxDist or results.size() < k:
+            if point[self.axis] < self.data[self.axis]:
+                self.right._search_node(point, k, results, examined, get_dist)
+            else:
+                self.left._search_node(point, k, results, examined, get_dist)
 
     @require_axis
     def search_nn(self, point, dist=None):
@@ -637,7 +625,7 @@ def create(point_list=None, dimensions=None, axis=0, sel_axis=None):
     loc   = point_list[median]
     left  = create(point_list[:median], dimensions, sel_axis(axis))
     right = create(point_list[median + 1:], dimensions, sel_axis(axis))
-    return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis)
+    return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis, dimensions=dimensions)
 
 
 def check_dimensionality(point_list, dimensions=None):
