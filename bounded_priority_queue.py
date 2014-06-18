@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 #
-# Pravin Paratey (April 15, 2011)
+# Based on the work of Pravin Paratey (April 15, 2011)
+# Joachim Hagege (June 18, 2014)  
+#
 # Code released under BSD license
+# 
+DISTANCE_INDEX = 1
 
 class BoundedPriorityQueue:
     """ This class illustrates a PriorityQueue and its associated functions """
@@ -37,9 +41,9 @@ class BoundedPriorityQueue:
         right_index = self.right_child(index)
 
         largest = index
-        if left_index < len(self.heap) and self.heap[left_index][1] > self.heap[index][1]:
+        if left_index < len(self.heap) and self.heap[left_index][DISTANCE_INDEX] > self.heap[index][DISTANCE_INDEX]:
             largest = left_index
-        if right_index < len(self.heap) and self.heap[right_index][1] > self.heap[largest][1]:
+        if right_index < len(self.heap) and self.heap[right_index][DISTANCE_INDEX] > self.heap[largest][DISTANCE_INDEX]:
             largest = right_index
 
         if largest != index:
@@ -51,12 +55,15 @@ class BoundedPriorityQueue:
         Responsible for building the heap bottom up. It starts with the lowest non-leaf nodes
         and calls heapify on them. This function is useful for initialising a heap with an
         unordered array. O(n)
+        We shall note that all the elements after floor(size/2) are leaves.
         """
         for i in xrange(len(self.heap)/2, -1, -1):
             self.max_heapify(i)
 
     def heap_sort(self):
-        """ The heap-sort algorithm with a time complexity O(n*log(n)) """
+        """ The heap-sort algorithm with a time complexity O(n*log(n))
+            We run n times the max_heapify (O(log n))
+        """
         self.build_max_heap()
         output = []
         for i in xrange(len(self.heap)-1, 0, -1):
@@ -68,11 +75,12 @@ class BoundedPriorityQueue:
 
     def propagate_up(self, index):
         """ Compares index with parent and swaps node if larger O(log(n)) """
-        while index != 0 and self.heap[self.parent(index)][1] < self.heap[index][1]:
+        while index != 0 and self.heap[self.parent(index)][DISTANCE_INDEX] < self.heap[index][DISTANCE_INDEX]:
             self.heap[index], self.heap[self.parent(index)] = self.heap[self.parent(index)], self.heap[index]
             index = self.parent(index)
 
-    # Here is the whole logic of the Bounded Priority queue. 
+    # Here is the whole logic of the Bounded Priority queue.
+    # Add an element only if size < k and if size == k, only if the element value is less than 
     def add(self, obj):
         # If number of elements == k and new element < max_elem:
         #   extract_max and add the new element.
@@ -86,14 +94,13 @@ class BoundedPriorityQueue:
             
             # The new element has a lower distance than the biggest one.
             # Then we insert, otherwise, don't insert.
-            if obj[1] < max_elem:
+            if obj[DISTANCE_INDEX] < max_elem:
                 self.extract_max()
                 self.heap_append(obj)
             
         # if size == 0 or 0 < Size < k
         else: 
             self.heap_append(obj)
-                
 
     def heap_append(self, obj):
         """ Adds an element in the heap O(ln(n)) """
