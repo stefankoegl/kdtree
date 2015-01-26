@@ -158,6 +158,30 @@ class BalanceTests(unittest.TestCase):
 
 class NearestNeighbor(unittest.TestCase):
 
+    def test_search_knn(self):
+        points = [(50, 20), (51, 19), (1, 80)]
+        tree = kdtree.create(points)
+        point = (48, 18)
+
+        all_dist = []
+        for p in tree.inorder():
+            dist = p.dist(point)
+            all_dist.append([p, dist])
+
+        all_dist = sorted(all_dist, key = lambda n:n[1])
+
+        result = tree.search_knn(point, 1)
+        self.assertEqual(result[0][1], all_dist[0][1])
+
+        result = tree.search_knn(point, 2)
+        self.assertEqual(result[0][1], all_dist[0][1])
+        self.assertEqual(result[1][1], all_dist[1][1])
+
+        result = tree.search_knn(point, 3)
+        self.assertEqual(result[0][1], all_dist[0][1])
+        self.assertEqual(result[1][1], all_dist[1][1])
+        self.assertEqual(result[2][1], all_dist[2][1])
+
     def test_search_nn(self, nodes=100):
         points = list(islice(random_points(), 0, nodes))
         tree = kdtree.create(points)

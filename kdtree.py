@@ -468,7 +468,7 @@ class KDNode(Node):
             bestDist = float('inf')
 
         else:
-            bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1])[0]
+            bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1], reverse=True)[0]
 
         # If the current node is closer than the current best, then it
         # becomes the current best.
@@ -488,7 +488,7 @@ class KDNode(Node):
             results[self] = nodeDist
 
         # get new best
-        bestNode = next(iter(sorted(results, key=get_dist)))
+        bestNode = next(iter(sorted(results, key=get_dist, reverse=True)))
         bestDist = get_dist(bestNode)
 
         # Check whether there could be any points on the other side of the
