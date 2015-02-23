@@ -242,20 +242,20 @@ class KDNode(Node):
             # Adding has hit an empty leaf-node, add here
             if current.data is None:
                 current.data = point
-                break
+                return current
 
             # split on self.axis, recurse either left or right
             if point[current.axis] < current.data[current.axis]:
                 if current.left is None:
                     current.left = current.create_subnode(point)
-                    break
+                    return current.left
                 else:
                     current = current.left
                     #self.left.add(point)
             else:
                 if current.right is None:
                     current.right = current.create_subnode(point)
-                    break
+                    return current.right
                 else:
                     current = current.right
 
