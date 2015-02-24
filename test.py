@@ -10,14 +10,16 @@ import doctest
 import collections
 from itertools import islice
 
-import kdtree
-
-
 try:
     import coverage
+    coverage.erase()
+    coverage.start()
+
 except ImportError:
     coverage = None
 
+# import after starting coverage, to ensure that import-time code is covered
+import kdtree
 
 class RemoveTest(unittest.TestCase):
 
@@ -308,10 +310,6 @@ def random_points(dimensions=3, minval=0, maxval=100):
 
 
 if __name__ == '__main__':
-
-    if coverage is not None:
-        coverage.erase()
-        coverage.start()
 
     suite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
     suite.addTest(doctest.DocTestSuite(kdtree))
