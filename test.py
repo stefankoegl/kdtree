@@ -270,6 +270,20 @@ class PointTypeTests(unittest.TestCase):
         self.assertEqual(res, kdtree.KDNode( (2, 3, 4) ))
 
 
+class PayloadTests(unittest.TestCase):
+    """ test tree.add() with payload """
+
+    def test_payload(self, nodes=100, dimensions=3):
+        points = list(islice(random_points(dimensions=dimensions), 0, nodes))
+        tree = kdtree.create(dimensions=dimensions)
+
+        for i, p in enumerate(points):
+            tree.add(p).payload = i
+
+        for i, p in enumerate(points):
+            self.assertEqual(i, tree.search_nn(p)[0].payload)
+
+
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
     points = list(islice(random_points(), 0, nodes))
     tree = kdtree.create(points)
