@@ -411,8 +411,6 @@ class KDNode(Node):
         The result is an ordered list of (node, distance) tuples.
         """
 
-        current = self
-
         if dist is None:
             get_dist = lambda n: n.dist(point)
         else:
@@ -420,7 +418,7 @@ class KDNode(Node):
 
         results = BoundedPriorityQueue(k)
 
-        current._search_node(point, k, results, get_dist)
+        self._search_node(point, k, results, get_dist)
 
         # We sort the final result by the distance in the tuple
         # (<KdNode>, distance)
