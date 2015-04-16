@@ -19,10 +19,9 @@ class BoundedPriorityQueue:
 
     def parent(self, index):
         """
-        Parent will be at math.floor(index/2). Since integer division
-        simulates the floor function, we don't explicity use it
+        Parent will be at math.floor(index/2).
         """
-        return index / 2
+        return int(index / 2)
 
     def left_child(self, index):
         return 2 * index + 1
