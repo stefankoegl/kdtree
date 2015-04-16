@@ -431,51 +431,50 @@ class KDNode(Node):
         else:
             get_dist = lambda n: dist(n.data, point)
 
-        examined = set()
         results = BoundedPriorityQueue(k)
 
-        current._search_node(point, k, results, examined, get_dist)
+        current._search_node(point, k, results, get_dist)
 
         # We sort the final result by the distance in the tuple (<KdNode>, distance)
         BY_VALUE = lambda kv: kv[1]
         return sorted(results.items(), key=BY_VALUE)
 
 
-    def _search_node(self, point, k, results, examined, get_dist):
+    def _search_node(self, point, k, results, get_dist):
         if not self:
             return
 
-        # If the current node is closer than the current best, then it
-        # becomes the current best.
         nodeDist = get_dist(self)
 
-        # The bounded priority queue has all the logic inside of it.
-        # For more info see BoundedPriorityQueue add function
+        # Add current node to the priority queue if it closer than
+        # at least one point in the queue. This functionality is
+        # taken care of by BoundedPriorityQueue.
         results.add((self, nodeDist))
 
-        if point[self.axis] < self.data[self.axis]:
+        # get the splitting plane
+        split_plane = self.data[self.axis]
+        # get the squared distance between the point and the splitting plane
+        # (squared since all distances are squared).
+        plane_dist = point[self.axis] - split_plane
+        plane_dist2 = plane_dist * plane_dist
+
+        # Search the side of the splitting plane that the point is in
+        if point[self.axis] < split_plane:
             if self.left is not None:
-                self.left._search_node(point, k, results, examined, get_dist)
+                self.left._search_node(point, k, results, get_dist)
         else:
             if self.right is not None:
-                self.right._search_node(point, k, results, examined, get_dist)
+                self.right._search_node(point, k, results, get_dist)
 
-        # Fetch the biggest distance from the BPQ.
-        maxDist = results.max()
-
-        absoluteDistance = abs(self.data[self.axis] - point[self.axis])
-        absoluteDistance2 = absoluteDistance*absoluteDistance
-
-        # Check whether there could be any points on the other side of the
-        # splitting plane that are closer to the search point than the current
-        # best.
-        if absoluteDistance2 < maxDist or results.size() < k:
+        # Search the other side of the splitting plane if it may contain
+        # points closer than the farthest point in the current results.
+        if plane_dist2 < results.max() or results.size() < k:
             if point[self.axis] < self.data[self.axis]:
                 if self.right is not None:
-                    self.right._search_node(point, k, results, examined, get_dist)
+                    self.right._search_node(point, k, results, get_dist)
             else:
                 if self.left is not None:
-                    self.left._search_node(point, k, results, examined, get_dist)
+                    self.left._search_node(point, k, results, get_dist)
 
 
     @require_axis
