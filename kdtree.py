@@ -21,12 +21,6 @@ __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
 
 
-# maps child position to its comparison operator
-COMPARE_CHILD = {
-    0: (operator.le, operator.sub),
-    1: (operator.ge, operator.add),
-}
-
 class Node(object):
     """ A Node in a kd-tree
 
@@ -237,10 +231,9 @@ class KDNode(Node):
 
         current = self
         while True:
-            # If one of the points doesn't have the same dim, raise an error.
             check_dimensionality([point], dimensions=current.dimensions)
 
-            # Adding has hit an empty leaf-node, add here.
+            # Adding has hit an empty leaf-node, add here
             if current.data is None:
                 current.data = point
                 return current
@@ -248,13 +241,10 @@ class KDNode(Node):
             # split on self.axis, recurse either left or right
             if point[current.axis] < current.data[current.axis]:
                 if current.left is None:
-                    # We add the point and break.
                     current.left = current.create_subnode(point)
                     return current.left
                 else:
-                    # We iterate over the point current and go back at the beginning of while.
                     current = current.left
-                    #self.left.add(point)
             else:
                 if current.right is None:
                     current.right = current.create_subnode(point)
@@ -267,7 +257,6 @@ class KDNode(Node):
     def create_subnode(self, data):
         """ Creates a subnode for the current node """
 
-        # IT WILL PROBABLY CREATE A KDNODE.
         return self.__class__(data,
                 axis=self.sel_axis(self.axis),
                 sel_axis=self.sel_axis,
@@ -403,7 +392,6 @@ class KDNode(Node):
         Squared distance between the current Node
         and the given point
         """
-        # r=[0,1,2] or r=[0,1]
         r = range(self.dimensions)
         return sum([self.axis_dist(point, i) for i in r])
 
@@ -425,7 +413,6 @@ class KDNode(Node):
 
         current = self
 
-        # If a distance function is provided, use it, otherwise use the default Euclidean distance (Pow((x2-x1),2) + ...)
         if dist is None:
             get_dist = lambda n: n.dist(point)
         else:
@@ -435,7 +422,8 @@ class KDNode(Node):
 
         current._search_node(point, k, results, get_dist)
 
-        # We sort the final result by the distance in the tuple (<KdNode>, distance)
+        # We sort the final result by the distance in the tuple
+        # (<KdNode>, distance)
         BY_VALUE = lambda kv: kv[1]
         return sorted(results.items(), key=BY_VALUE)
 
@@ -601,7 +589,6 @@ def create(point_list=None, dimensions=None, axis=0, sel_axis=None):
     left  = create(point_list[:median], dimensions, sel_axis(axis))
     right = create(point_list[median + 1:], dimensions, sel_axis(axis))
     return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis, dimensions=dimensions)
-
 
 
 def check_dimensionality(point_list, dimensions=None):
