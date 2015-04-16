@@ -483,10 +483,12 @@ class KDNode(Node):
         results.add((self, nodeDist))
         
         if point[self.axis] < self.data[self.axis]:
-            self.left._search_node(point, k, results, examined, get_dist)
+            if self.left is not None:
+                self.left._search_node(point, k, results, examined, get_dist)
         else:
-            self.right._search_node(point, k, results, examined, get_dist)
-        
+            if self.right is not None:
+                self.right._search_node(point, k, results, examined, get_dist)
+
         # Fetch the biggest distance from the BPQ.
         # This is used tu check besides if: abs(point[axis] - nodePoint[axis]) < maxDistance)
         maxDist = results.max()
@@ -498,9 +500,11 @@ class KDNode(Node):
         # best.
         if absoluteDistance < maxDist or results.size() < k:
             if point[self.axis] < self.data[self.axis]:
-                self.right._search_node(point, k, results, examined, get_dist)
+                if self.right is not None:
+                    self.right._search_node(point, k, results, examined, get_dist)
             else:
-                self.left._search_node(point, k, results, examined, get_dist)
+                if self.left is not None:
+                    self.left._search_node(point, k, results, examined, get_dist)
 
     @require_axis
     def search_nn(self, point, dist=None):
