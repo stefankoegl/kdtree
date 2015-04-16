@@ -21,12 +21,6 @@ __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
 
 
-# maps child position to its comparison operator
-COMPARE_CHILD = {
-    0: (operator.le, operator.sub),
-    1: (operator.ge, operator.add),
-}
-
 class Node(object):
     """ A Node in a kd-tree
 
@@ -252,9 +246,9 @@ class KDNode(Node):
                     current.left = current.create_subnode(point)
                     return current.left
                 else:
-                    # We iterate over the point current and go back at the beginning of while.
+                    # We iterate over the point current and go back at the
+                    # beginning of while.
                     current = current.left
-                    #self.left.add(point)
             else:
                 if current.right is None:
                     current.right = current.create_subnode(point)
@@ -425,7 +419,8 @@ class KDNode(Node):
 
         current = self
 
-        # If a distance function is provided, use it, otherwise use the default Euclidean distance (Pow((x2-x1),2) + ...)
+        # If a distance function is provided, use it, otherwise use the default
+        # Euclidean distance (Pow((x2-x1),2) + ...)
         if dist is None:
             get_dist = lambda n: n.dist(point)
         else:
@@ -435,7 +430,8 @@ class KDNode(Node):
 
         current._search_node(point, k, results, get_dist)
 
-        # We sort the final result by the distance in the tuple (<KdNode>, distance)
+        # We sort the final result by the distance in the tuple
+        # (<KdNode>, distance)
         BY_VALUE = lambda kv: kv[1]
         return sorted(results.items(), key=BY_VALUE)
 
