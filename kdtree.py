@@ -464,11 +464,12 @@ class KDNode(Node):
         maxDist = results.max()
 
         absoluteDistance = abs(self.data[self.axis] - point[self.axis])
+        absoluteDistance2 = absoluteDistance*absoluteDistance
 
         # Check whether there could be any points on the other side of the
         # splitting plane that are closer to the search point than the current
         # best.
-        if absoluteDistance < maxDist or results.size() < k:
+        if absoluteDistance2 < maxDist or results.size() < k:
             if point[self.axis] < self.data[self.axis]:
                 if self.right is not None:
                     self.right._search_node(point, k, results, examined, get_dist)
