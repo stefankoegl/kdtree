@@ -488,8 +488,7 @@ class KDNode(Node):
             results[self] = nodeDist
 
         # get new best
-        bestNode = next(iter(sorted(results, key=get_dist, reverse=True)))
-        bestDist = get_dist(bestNode)
+        bestNode, bestDist = next(iter(sorted(results.items(), key=lambda n: n[1], reverse=True)))
 
         # Check whether there could be any points on the other side of the
         # splitting plane that are closer to the search point than the current
