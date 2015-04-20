@@ -470,6 +470,8 @@ class KDNode(Node):
         else:
             bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1], reverse=True)[0]
 
+        nodesChanged = False
+
         # If the current node is closer than the current best, then it
         # becomes the current best.
         nodeDist = get_dist(self)
@@ -478,18 +480,23 @@ class KDNode(Node):
                results.pop(bestNode)
 
             results[self] = nodeDist
+            nodesChanged = True
 
         # if we're equal to the current best, add it, regardless of k
         elif nodeDist == bestDist:
             results[self] = nodeDist
+            nodesChanged = True
 
         # if we don't have k results yet, add it anyway
         elif len(results) < k:
             results[self] = nodeDist
+            nodesChanged = True
 
-        # get new best
-        bestNode = next(iter(sorted(results, key=get_dist, reverse=True)))
-        bestDist = get_dist(bestNode)
+        # get new best only if nodes have changed
+        if nodesChanged:
+            bestNode, bestDist = next(iter(
+                sorted(results.items(), key=lambda n: n[1], reverse=True)
+            ))
 
         # Check whether there could be any points on the other side of the
         # splitting plane that are closer to the search point than the current
