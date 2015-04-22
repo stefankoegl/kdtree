@@ -7,3 +7,5 @@ python:
   - "pypy"
 
 script: python test.py
+
+sudo: false
