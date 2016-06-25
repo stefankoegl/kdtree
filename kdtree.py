@@ -213,8 +213,6 @@ class KDNode(Node):
         sel_axis(axis) is used when creating subnodes of the current node. It
         receives the axis of the parent node and returns the axis of the child
         node. """
-        if type(data) == 'list':
-            data = list(data)
         super(KDNode, self).__init__(data, left, right)
         self.axis = axis
         self.sel_axis = sel_axis
@@ -581,6 +579,7 @@ def create(point_list=None, dimensions=None, axis=0, sel_axis=None):
         return KDNode(sel_axis=sel_axis, axis=axis, dimensions=dimensions)
 
     # Sort point list and choose median as pivot element
+    point_list = list(point_list)
     point_list.sort(key=lambda point: point[axis])
     median = len(point_list) // 2
 
