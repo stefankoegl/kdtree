@@ -5,3 +5,4 @@ dist
 MANIFEST
 doc/_build
 venv*
+kdtree.egg-info
