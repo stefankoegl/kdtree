@@ -213,7 +213,8 @@ class KDNode(Node):
         sel_axis(axis) is used when creating subnodes of the current node. It
         receives the axis of the parent node and returns the axis of the child
         node. """
-
+        if type(data) == 'list':
+            data = list(data)
         super(KDNode, self).__init__(data, left, right)
         self.axis = axis
         self.sel_axis = sel_axis
