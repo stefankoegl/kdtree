@@ -16,7 +16,7 @@ from functools import wraps
 from bounded_priority_queue import BoundedPriorityQueue
 
 __author__ = u'Stefan Kögl <stefan@skoegl.net>'
-__version__ = '0.12'
+__version__ = '0.13'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
 
