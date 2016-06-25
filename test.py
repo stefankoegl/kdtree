@@ -9,6 +9,7 @@ import unittest
 import doctest
 import collections
 from itertools import islice
+from bounded_priority_queue import BoundedPriorityQueue
 
 try:
     import coverage
@@ -308,6 +309,50 @@ class PayloadTests(unittest.TestCase):
 
         for i, p in enumerate(points):
             self.assertEqual(i, tree.search_nn(p)[0].payload)
+
+
+class BoundedPriorityQueueTests(unittest.TestCase):
+    """ Test bounded priority queue """
+
+    def test_size(self):
+        bpq = self.get_test_bpq()
+        self.assertEqual(bpq.size(), 5)
+
+    def test_max(self):
+        bpq = self.get_test_bpq()
+        # note: not 4.6! The bpq keeps the smallest k values (5 in this test).
+        self.assertEqual(bpq.max(), 3.2)
+
+    def test_extract(self):
+        bpq = self.get_test_bpq()
+        nodes = self.get_test_nodes()
+        nodes = sorted(nodes, key=lambda n: n[1], reverse=True)
+        # get rid of the 2 largest nodes, since the bpq only keeps the
+        # 5 smallest of the 7 nodes
+        nodes = nodes[2:]
+        for i in range(5):
+            node, dist = bpq.extract_max()
+            exp_node, exp_dist = nodes.pop(0)
+            self.assertEqual(dist, exp_dist)
+        self.assertEqual(bpq.size(), 0)
+
+    def get_test_bpq(self):
+        bound = 5
+        bpq = BoundedPriorityQueue(bound)
+        for n in self.get_test_nodes():
+            bpq.add(n)
+        return bpq
+
+    def get_test_nodes(self):
+        return [
+            (None, 0.1),
+            (None, 0.25),
+            (None, 1.33),
+            (None, 3.2),
+            (None, 4.6),
+            (None, 0.4),
+            (None, 4.0)
+        ]
 
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):

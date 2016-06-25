@@ -13,18 +13,12 @@ import operator
 import math
 from collections import deque
 from functools import wraps
+from bounded_priority_queue import BoundedPriorityQueue
 
 __author__ = u'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.12'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
-
-
-# maps child position to its comparison operator
-COMPARE_CHILD = {
-    0: (operator.le, operator.sub),
-    1: (operator.ge, operator.add),
-}
 
 
 class Node(object):
@@ -251,7 +245,6 @@ class KDNode(Node):
                     return current.left
                 else:
                     current = current.left
-                    #self.left.add(point)
             else:
                 if current.right is None:
                     current.right = current.create_subnode(point)
@@ -399,7 +392,7 @@ class KDNode(Node):
         Squared distance between the current Node
         and the given point
         """
-        r = range(len(self.data))
+        r = range(self.dimensions)
         return sum([self.axis_dist(point, i) for i in r])
 
 
@@ -418,112 +411,56 @@ class KDNode(Node):
         The result is an ordered list of (node, distance) tuples.
         """
 
-        prev = None
-        current = self
-
         if dist is None:
             get_dist = lambda n: n.dist(point)
         else:
             get_dist = lambda n: dist(n.data, point)
 
-        # the nodes do not keep a reference to their parents
-        parents = {current: None}
+        results = BoundedPriorityQueue(k)
 
-        # go down the tree as we would for inserting
-        while current:
-            if point[current.axis] < current.data[current.axis]:
-                # left side
-                parents[current.left] = current
-                prev = current
-                current = current.left
-            else:
-                # right side
-                parents[current.right] = current
-                prev = current
-                current = current.right
+        self._search_node(point, k, results, get_dist)
 
-        if not prev:
-            return []
-
-        examined = set()
-        results = {}
-
-        # Go up the tree, looking for better solutions
-        current = prev
-        while current:
-            # search node and update results
-            current._search_node(point, k, results, examined, get_dist)
-            current = parents[current]
-
+        # We sort the final result by the distance in the tuple
+        # (<KdNode>, distance)
         BY_VALUE = lambda kv: kv[1]
         return sorted(results.items(), key=BY_VALUE)
 
 
-    def _search_node(self, point, k, results, examined, get_dist):
-        examined.add(self)
+    def _search_node(self, point, k, results, get_dist):
+        if not self:
+            return
 
-        # get current best
-        if not results:
-            bestNode = None
-            bestDist = float('inf')
-
-        else:
-            bestNode, bestDist = sorted(results.items(), key=lambda n_d: n_d[1], reverse=True)[0]
-
-        nodesChanged = False
-
-        # If the current node is closer than the current best, then it
-        # becomes the current best.
         nodeDist = get_dist(self)
-        if nodeDist < bestDist:
-            if len(results) == k and bestNode:
-               results.pop(bestNode)
 
-            results[self] = nodeDist
-            nodesChanged = True
+        # Add current node to the priority queue if it closer than
+        # at least one point in the queue. This functionality is
+        # taken care of by BoundedPriorityQueue.
+        results.add((self, nodeDist))
 
-        # if we're equal to the current best, add it, regardless of k
-        elif nodeDist == bestDist:
-            results[self] = nodeDist
-            nodesChanged = True
+        # get the splitting plane
+        split_plane = self.data[self.axis]
+        # get the squared distance between the point and the splitting plane
+        # (squared since all distances are squared).
+        plane_dist = point[self.axis] - split_plane
+        plane_dist2 = plane_dist * plane_dist
 
-        # if we don't have k results yet, add it anyway
-        elif len(results) < k:
-            results[self] = nodeDist
-            nodesChanged = True
+        # Search the side of the splitting plane that the point is in
+        if point[self.axis] < split_plane:
+            if self.left is not None:
+                self.left._search_node(point, k, results, get_dist)
+        else:
+            if self.right is not None:
+                self.right._search_node(point, k, results, get_dist)
 
-        # get new best only if nodes have changed
-        if nodesChanged:
-            bestNode, bestDist = next(iter(
-                sorted(results.items(), key=lambda n: n[1], reverse=True)
-            ))
-
-        # Check whether there could be any points on the other side of the
-        # splitting plane that are closer to the search point than the current
-        # best.
-        for child, pos in self.children:
-            if child in examined:
-                continue
-
-            examined.add(child)
-            compare, combine = COMPARE_CHILD[pos]
-
-            # Since the hyperplanes are all axis-aligned this is implemented
-            # as a simple comparison to see whether the difference between the
-            # splitting coordinate of the search point and current node is less
-            # than the distance (overall coordinates) from the search point to
-            # the current best.
-            nodePoint = self.data[self.axis]
-            pointPlusDist = combine(point[self.axis], bestDist)
-            lineIntersects = compare(pointPlusDist, nodePoint)
-
-            # If the hypersphere crosses the plane, there could be nearer
-            # points on the other side of the plane, so the algorithm must move
-            # down the other branch of the tree from the current node looking
-            # for closer points, following the same recursive process as the
-            # entire search.
-            if lineIntersects:
-                child._search_node(point, k, results, examined, get_dist)
+        # Search the other side of the splitting plane if it may contain
+        # points closer than the farthest point in the current results.
+        if plane_dist2 < results.max() or results.size() < k:
+            if point[self.axis] < self.data[self.axis]:
+                if self.right is not None:
+                    self.right._search_node(point, k, results, get_dist)
+            else:
+                if self.left is not None:
+                    self.left._search_node(point, k, results, get_dist)
 
 
     @require_axis
@@ -649,7 +586,7 @@ def create(point_list=None, dimensions=None, axis=0, sel_axis=None):
     loc   = point_list[median]
     left  = create(point_list[:median], dimensions, sel_axis(axis))
     right = create(point_list[median + 1:], dimensions, sel_axis(axis))
-    return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis)
+    return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis, dimensions=dimensions)
 
 
 def check_dimensionality(point_list, dimensions=None):
