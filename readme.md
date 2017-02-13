@@ -121,3 +121,8 @@ Usage
                [4, 5, 6]            (6, 1, 5)
 
           (2, 3, 4)
+
+    # Add payloads to nodes, such as array indices, names etc. for quick lookup
+    >>> tree.add((1,2,3)).payload = 'my name is 123'
+    >>> tree.search_nn((1,2,3))[0].payload
+    'my name is 123'
