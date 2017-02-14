@@ -121,3 +121,54 @@ Usage
                [4, 5, 6]            (6, 1, 5)
 
           (2, 3, 4)
+
+### Adding a payload
+
+Indexing a dict by a pair of floats is not a good idea, since there might be unexpected precision errors.
+Since KDTree expects a tuple-looking objects for nodes, you can make a class that looks like a tuple, but
+contains more data. This way you can store all your data in a kdtree, without using an additional
+indexed structure.
+
+```python
+import kdtree
+
+# This class emulates a tuple, but contains a useful payload
+class Item(object):
+    def __init__(self, x, y, data):
+        self.coords = (x, y)
+        self.data = data
+
+    def __len__(self):
+        return len(self.coords)
+
+    def __getitem__(self, i):
+        return self.coords[i]
+
+    def __repr__(self):
+        return 'Item({}, {}, {})'.format(self.coords[0], self.coords[1], self.data)
+
+# Now we can add Items to the tree, which look like tuples to it
+point1 = Item(2, 3, 'First')
+point2 = Item(3, 4, 'Second')
+point3 = Item(5, 2, ['some', 'list'])
+
+# Again, from a list of points
+tree = kdtree.create([point1, point2, point3])
+
+#  The root node
+print(tree)
+
+# ...contains "data" field with an Item, which contains the payload in "data" field
+print(tree.data.data)
+
+# All functions work as intended, a payload is never lost
+print(tree.search_nn([1, 2]))
+```
+
+Prints:
+
+```
+<KDNode - Item(3, 4, Second)>
+Second
+(<KDNode - Item(2, 3, First)>, 2.0)
+```
