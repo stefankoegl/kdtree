@@ -421,8 +421,8 @@ class KDNode(Node):
         self._search_node(point, k, results, get_dist, itertools.count())
 
         # We sort the final result by the distance in the tuple
-        # (<KdNode>, distance)
-        return [(node, dist) for dist, _, node in sorted(results)]
+        # (<KdNode>, distance).
+        return [(node, -d) for d, _, node in sorted(results, reverse=True)]
 
 
     def _search_node(self, point, k, results, get_dist, counter):
@@ -432,11 +432,15 @@ class KDNode(Node):
         nodeDist = get_dist(self)
 
         # Add current node to the priority queue if it closer than
-        # at least one point in the queue. This functionality is
-        # taken care of by BoundedPriorityQueue.
-        item = (nodeDist, next(counter), self)
-        if len(results) >= k and item[0] < min(results)[0]:
-            heapq.heapreplace(results, item)
+        # at least one point in the queue.
+        #
+        # If the heap is at its capacity, we need to check if the
+        # current node is closer than the current farthest node, and if
+        # so, replace it.
+        item = (-nodeDist, next(counter), self)
+        if len(results) >= k:
+            if -nodeDist > min(results)[0]:
+                heapq.heapreplace(results, item)
         else:
             heapq.heappush(results, item)
         # get the splitting plane
@@ -456,7 +460,7 @@ class KDNode(Node):
 
         # Search the other side of the splitting plane if it may contain
         # points closer than the farthest point in the current results.
-        if plane_dist2 < max(results)[0] or len(results) < k:
+        if plane_dist2 > min(results)[0] or len(results) < k:
             if point[self.axis] < self.data[self.axis]:
                 if self.right is not None:
                     self.right._search_node(point, k, results, get_dist,
