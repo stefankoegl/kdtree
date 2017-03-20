@@ -63,4 +63,5 @@ setup(name=PACKAGE,
         PACKAGE[0] + '/' + PACKAGE + '/' + \
         PACKAGE + '-' + VERSION + '.tar.gz',
       classifiers=CLASSIFIERS,
+      test_suite='test',
 )
