@@ -14,7 +14,6 @@ PACKAGE = 'kdtree'
 
 MODULES = (
         PACKAGE,
-        'bounded_priority_queue',
 )
 
 AUTHOR_EMAIL = metadata['author']
