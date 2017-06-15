@@ -246,7 +246,7 @@ class NearestNeighbor(unittest.TestCase):
         tree = kdtree.create(points)
         nn = tree.search_nn_dist((5,5), 2.5)
 
-        self.assertEquals(len(nn), 4)
+        self.assertEqual(len(nn), 4)
         self.assertTrue( (6,6) in nn)
         self.assertTrue( (5,5) in nn)
         self.assertTrue( (5,6) in nn)
