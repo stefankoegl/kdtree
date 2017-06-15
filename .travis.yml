@@ -9,6 +9,13 @@ python:
   - "pypy"
   - "pypy3"
 
-script: python setup.py test
+install:
+  - travis_retry pip install coveralls
+
+script:
+  - coverage run --source=kdtree -m unittest
+
+after_script:
+  - coveralls
 
 sudo: false
