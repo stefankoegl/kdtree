@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 
 """A Python implemntation of a kd-tree
@@ -9,11 +9,12 @@ https://en.wikipedia.org/wiki/K-d_tree
 
 from __future__ import print_function
 
+import heapq
+import itertools
 import operator
 import math
 from collections import deque
 from functools import wraps
-from bounded_priority_queue import BoundedPriorityQueue
 
 __author__ = u'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '0.15'
@@ -415,27 +416,33 @@ class KDNode(Node):
         else:
             get_dist = lambda n: dist(n.data, point)
 
-        results = BoundedPriorityQueue(k)
+        results = []
 
-        self._search_node(point, k, results, get_dist)
+        self._search_node(point, k, results, get_dist, itertools.count())
 
         # We sort the final result by the distance in the tuple
-        # (<KdNode>, distance)
-        BY_VALUE = lambda kv: kv[1]
-        return sorted(results.items(), key=BY_VALUE)
+        # (<KdNode>, distance).
+        return [(node, -d) for d, _, node in sorted(results, reverse=True)]
 
 
-    def _search_node(self, point, k, results, get_dist):
+    def _search_node(self, point, k, results, get_dist, counter):
         if not self:
             return
 
         nodeDist = get_dist(self)
 
         # Add current node to the priority queue if it closer than
-        # at least one point in the queue. This functionality is
-        # taken care of by BoundedPriorityQueue.
-        results.add((self, nodeDist))
-
+        # at least one point in the queue.
+        #
+        # If the heap is at its capacity, we need to check if the
+        # current node is closer than the current farthest node, and if
+        # so, replace it.
+        item = (-nodeDist, next(counter), self)
+        if len(results) >= k:
+            if -nodeDist > min(results)[0]:
+                heapq.heapreplace(results, item)
+        else:
+            heapq.heappush(results, item)
         # get the splitting plane
         split_plane = self.data[self.axis]
         # get the squared distance between the point and the splitting plane
@@ -446,20 +453,22 @@ class KDNode(Node):
         # Search the side of the splitting plane that the point is in
         if point[self.axis] < split_plane:
             if self.left is not None:
-                self.left._search_node(point, k, results, get_dist)
+                self.left._search_node(point, k, results, get_dist, counter)
         else:
             if self.right is not None:
-                self.right._search_node(point, k, results, get_dist)
+                self.right._search_node(point, k, results, get_dist, counter)
 
         # Search the other side of the splitting plane if it may contain
         # points closer than the farthest point in the current results.
-        if plane_dist2 < results.max() or results.size() < k:
+        if plane_dist2 > min(results)[0] or len(results) < k:
             if point[self.axis] < self.data[self.axis]:
                 if self.right is not None:
-                    self.right._search_node(point, k, results, get_dist)
+                    self.right._search_node(point, k, results, get_dist,
+                                            counter)
             else:
                 if self.left is not None:
-                    self.left._search_node(point, k, results, get_dist)
+                    self.left._search_node(point, k, results, get_dist,
+                                           counter)
 
 
     @require_axis
