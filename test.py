@@ -10,14 +10,6 @@ import doctest
 import collections
 from itertools import islice
 
-try:
-    import coverage
-    coverage.erase()
-    coverage.start()
-
-except ImportError:
-    coverage = None
-
 # import after starting coverage, to ensure that import-time code is covered
 import kdtree
 
@@ -321,19 +313,3 @@ def random_point(dimensions=3, minval=0, maxval=100):
 def random_points(dimensions=3, minval=0, maxval=100):
     while True:
         yield random_point(dimensions, minval, maxval)
-
-
-if __name__ == '__main__':
-
-    suite = unittest.TestLoader().loadTestsFromModule(sys.modules[__name__])
-    suite.addTest(doctest.DocTestSuite(kdtree))
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
-
-    if not result.wasSuccessful():
-        sys.exit(1)
-
-    if coverage is not None:
-        coverage.stop()
-        coverage.report([kdtree])
-        coverage.erase()

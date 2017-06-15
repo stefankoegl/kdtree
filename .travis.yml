@@ -9,6 +9,6 @@ python:
   - "pypy"
   - "pypy3"
 
-script: python test.py
+script: python setup.py test
 
 sudo: false
