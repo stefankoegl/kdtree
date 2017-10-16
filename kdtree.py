@@ -489,6 +489,27 @@ class KDNode(Node):
         return next(iter(self.search_knn(point, 1, dist)), None)
 
 
+    def _search_nn_dist(self, point, dist, results, get_dist):
+        if not self:
+            return
+
+        nodeDist = get_dist(self)
+
+        if nodeDist < dist:
+          results.append(self.data)
+
+        # get the splitting plane
+        split_plane = self.data[self.axis]
+
+        # Search the side of the splitting plane that the point is in
+        if point[self.axis] <= split_plane + dist:
+            if self.left is not None:
+                self.left._search_nn_dist(point, dist, results, get_dist)
+        if point[self.axis] >= split_plane - dist:
+            if self.right is not None:
+                self.right._search_nn_dist(point, dist, results, get_dist)
+
+
     @require_axis
     def search_nn_dist(self, point, distance, best=None):
         """
@@ -499,22 +520,11 @@ class KDNode(Node):
         nodes to the point within the distance will be returned.
         """
 
-        if best is None:
-            best = []
+        results = []
+        get_dist = lambda n: n.dist(point)
 
-        # consider the current node
-        if self.dist(point) < distance:
-            best.append(self)
-
-        # sort the children, nearer one first (is this really necessairy?)
-        children = sorted(self.children, key=lambda c_p1: c_p1[0].dist(point))
-
-        for child, p in children:
-            # check if child node needs to be recursed
-            if self.axis_dist(point, self.axis) < math.pow(distance, 2):
-                child.search_nn_dist(point, distance, best)
-
-        return best
+        self._search_nn_dist(point, distance, results, get_dist)
+        return results
 
 
     @require_axis
