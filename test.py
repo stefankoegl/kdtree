@@ -257,6 +257,53 @@ class NearestNeighbor(unittest.TestCase):
         self.assertTrue( (5,6) in nn)
         self.assertTrue( (6,5) in nn)
 
+    def test_search_nn_dist2(self):
+        """ Test case from #36 """
+        points = [[0.25, 0.25, 1.600000023841858], [0.75, 0.25, 1.600000023841858], [1.25, 0.25, 1.600000023841858],
+               [1.75, 0.25, 1.600000023841858], [2.25, 0.25, 1.600000023841858], [2.75, 0.25, 1.600000023841858]]
+
+        expected = [0.25, 0.25, 1.600000023841858]
+        tree = kdtree.create(points)
+        rmax = 1.0
+        search_p = [0.42621034383773804, 0.18793821334838867, 1.44510018825531]
+        results = tree.search_nn_dist(search_p, rmax)
+        found = False
+        for result in results:
+            if result == expected:
+                found = True
+                break
+        self.assertTrue(found)
+
+    def test_search_nn_dist3(self):
+        """ Test case from #36 """
+        pointslst = [
+            (0.25, 0.25, 1.600000023841858),
+            (0.75, 0.25, 1.600000023841858),
+            (1.25, 0.25, 1.600000023841858),
+            (1.75, 0.25, 1.600000023841858),
+            (2.25, 0.25, 1.600000023841858),
+            (2.75, 0.25, 1.600000023841858),
+        ]
+
+        tree = kdtree.create(pointslst)
+        point = (0.42621034383773804, 0.18793821334838867, 1.44510018825531)
+
+        points = tree.inorder()
+        points = sorted(points, key=lambda p: p.dist(point))
+
+        for p in points:
+            dist = p.dist(point)
+            nn = tree.search_nn_dist(point, dist)
+
+            for pn in points:
+                if pn in nn:
+                    msg = '{} in {} but {} < {}'.format(
+                        pn, nn, pn.dist(point), dist)
+                    self.assertTrue(pn.dist(point) < dist, msg)
+                else:
+                    msg = '{} not in {} but {} >= {}'.format(
+                        pn, nn, pn.dist(point), dist)
+                    self.assertTrue(pn.dist(point) >= dist, msg)
 
     def test_search_nn_dist_random(self):
 
