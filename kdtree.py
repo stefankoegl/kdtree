@@ -411,6 +411,9 @@ class KDNode(Node):
         The result is an ordered list of (node, distance) tuples.
         """
 
+        if k < 1:
+            raise ValueError("k must be greater than 0.")
+
         if dist is None:
             get_dist = lambda n: n.dist(point)
         else:
@@ -439,7 +442,7 @@ class KDNode(Node):
         # so, replace it.
         item = (-nodeDist, next(counter), self)
         if len(results) >= k:
-            if -nodeDist > min(results)[0]:
+            if -nodeDist > results[0][0]:
                 heapq.heapreplace(results, item)
         else:
             heapq.heappush(results, item)
@@ -460,7 +463,7 @@ class KDNode(Node):
 
         # Search the other side of the splitting plane if it may contain
         # points closer than the farthest point in the current results.
-        if plane_dist2 > min(results)[0] or len(results) < k:
+        if -plane_dist2 > results[0][0] or len(results) < k:
             if point[self.axis] < self.data[self.axis]:
                 if self.right is not None:
                     self.right._search_node(point, k, results, get_dist,
