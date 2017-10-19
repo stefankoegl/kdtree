@@ -499,7 +499,7 @@ class KDNode(Node):
         nodeDist = get_dist(self)
 
         if nodeDist < dist:
-          results.append(self.data)
+            results.append(self.data)
 
         # get the splitting plane
         split_plane = self.data[self.axis]
