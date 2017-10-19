@@ -366,5 +366,6 @@ def random_points(dimensions=3, minval=0, maxval=100):
     while True:
         yield random_point(dimensions, minval, maxval)
 
+
 if __name__ == "__main__":
     unittest.main()
