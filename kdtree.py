@@ -406,7 +406,7 @@ class KDNode(Node):
         distances.
 
         dist is a distance function, expecting two points and returning a
-        distance value. Distance values can be any compareable type.
+        distance value. Distance values can be any comparable type.
 
         The result is an ordered list of (node, distance) tuples.
         """
@@ -484,7 +484,7 @@ class KDNode(Node):
         with this location will be returned (not its neighbor).
 
         dist is a distance function, expecting two points and returning a
-        distance value. Distance values can be any compareable type.
+        distance value. Distance values can be any comparable type.
 
         The result is a (node, distance) tuple.
         """
