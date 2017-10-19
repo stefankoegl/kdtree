@@ -246,7 +246,12 @@ class NearestNeighbor(unittest.TestCase):
         tree = kdtree.create(points)
         nn = tree.search_nn_dist((5,5), 2.5)
 
-        self.assertEqual(len(nn), 4)
+        self.assertEqual(len(nn), 9)
+        self.assertTrue( (4,4) in nn)
+        self.assertTrue( (4,5) in nn)
+        self.assertTrue( (4,6) in nn)
+        self.assertTrue( (5,4) in nn)
+        self.assertTrue( (6,4) in nn)
         self.assertTrue( (6,6) in nn)
         self.assertTrue( (5,5) in nn)
         self.assertTrue( (5,6) in nn)
@@ -313,3 +318,6 @@ def random_point(dimensions=3, minval=0, maxval=100):
 def random_points(dimensions=3, minval=0, maxval=100):
     while True:
         yield random_point(dimensions, minval, maxval)
+
+if __name__ == "__main__":
+    unittest.main()
