@@ -529,6 +529,51 @@ class KDNode(Node):
         self._search_nn_dist(point, distance, results, get_dist)
         return results
 
+    @require_axis
+    def range_search(self, top_left, bottom_right):
+        """
+        Search all nodes in or on the hyperrectangle defined by the points top_left and bottom_right.
+
+        Note: the list returned is not in any particular order.
+        """
+
+        invalid_rect = False
+        if len(top_left) != len(bottom_right) or len(top_left) != self.dimensions:
+            invalid_rect = True
+        else:
+            for i in range(len(top_left)):
+                if top_left[i] > bottom_right[i]:
+                    invalid_rect = True
+                    break
+
+        if invalid_rect:
+            raise ValueError("invalid rectangle")
+
+        results = []
+        stack = [self]
+
+        while(stack):
+            node = stack.pop()
+
+            data = node.data
+            axis = node.axis
+
+            if data == None:
+                continue
+
+            in_range = True
+            for d in range(0, len(data)):
+                in_range &= (data[d] >= top_left[d]) and (data[d] <= bottom_right[d])
+
+            if in_range:
+                results.append(node)
+
+            if data[axis] >= top_left[axis] and node.left:
+                stack.append(node.left)
+            if data[axis] <= bottom_right[axis] and node.right:
+                stack.append(node.right)
+
+        return results
 
     @require_axis
     def is_valid(self):
