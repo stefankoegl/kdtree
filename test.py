@@ -245,7 +245,7 @@ class NearestNeighbor(unittest.TestCase):
         points = [(x,y) for x in range(10) for y in range(10)]
         tree = kdtree.create(points)
         nn = tree.search_nn_dist((5,5), 2.5)
-
+        nn = [ i[0] for i in nn ]
         self.assertEqual(len(nn), 9)
         self.assertTrue( (4,4) in nn)
         self.assertTrue( (4,5) in nn)
@@ -268,6 +268,7 @@ class NearestNeighbor(unittest.TestCase):
         search_p = [0.42621034383773804, 0.18793821334838867, 1.44510018825531]
         results = tree.search_nn_dist(search_p, rmax)
         found = False
+        results = [ i[0] for i in results ]
         for result in results:
             if result == expected:
                 found = True
@@ -295,6 +296,8 @@ class NearestNeighbor(unittest.TestCase):
             dist = p.dist(point)
             nn = tree.search_nn_dist(point, dist)
 
+            nn = [ i[0] for i in nn ]
+
             for pn in points:
                 if pn in nn:
                     msg = '{} in {} but {} < {}'.format(
@@ -318,11 +321,15 @@ class NearestNeighbor(unittest.TestCase):
                 dist = p.dist(point)
                 nn = tree.search_nn_dist(point, dist)
 
+                nn = { i[0]: i[1] for i in nn }
+
                 for pn in points:
-                    if pn in nn:
-                        self.assertTrue(pn.dist(point) < dist, '%s in %s but %s < %s' % (pn, nn, pn.dist(point), dist))
+                    actual_distance = pn.dist(point)
+                    if pn.data in nn:
+                        self.assertTrue( actual_distance < dist, '%s in %s but %s < %s' % (pn, nn, actual_distance, dist))
+                        self.assertTrue( actual_distance == nn[pn.data] )
                     else:
-                        self.assertTrue(pn.dist(point) >= dist, '%s not in %s but %s >= %s' % (pn, nn, pn.dist(point), dist))
+                        self.assertTrue( actual_distance >= dist, '%s not in %s but %s >= %s' % (pn, nn, actual_distance, dist))
 
 
 class PointTypeTests(unittest.TestCase):
