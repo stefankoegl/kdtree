@@ -34,7 +34,9 @@ class Node(object):
         self.right = right
 
 
-    @property
+    # The @property decorator allows you to create read-only properties, making it possible to 
+    # access a method as if it were an attribute without the need to call it like a function.
+    @property 
     def is_leaf(self):
         """ Returns True if a Node has no subnodes
 
@@ -46,7 +48,9 @@ class Node(object):
         """
         return (not self.data) or \
                (all(not bool(c) for c, p in self.children))
-
+        # all(iterable) 
+        # The all() function returns True if all items in an iterable are true
+        # The bool() function returns the boolean value of a specified object.
 
     def preorder(self):
         """ iterator for nodes: root, left, right """
@@ -55,6 +59,9 @@ class Node(object):
             return
 
         yield self
+
+        # yield statement suspends a function’s execution and sends a value back to the caller, 
+        # but retains enough state to enable the function to resume where it left off.
 
         if self.left:
             for x in self.left.preorder():
@@ -135,6 +142,8 @@ class Node(object):
 
 
     def height(self):
+        # The height of a vertex in a rooted tree is 
+        # the length of the longest downward path to a leaf from that vertex.
         """
         Returns height of the (sub)tree, without considering
         empty leaf-nodes
