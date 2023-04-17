@@ -28,6 +28,7 @@ class Node(object):
     A tree is represented by its root node, and every node represents
     its subtree"""
 
+    # self represents the instance of the class.
     def __init__(self, data=None, left=None, right=None):
         self.data = data
         self.left = left
@@ -173,23 +174,29 @@ class Node(object):
                 return pos
 
 
+    # self.__class__ is a reference to the type of the current instance.
     def __repr__(self):
         return '<%(cls)s - %(data)s>' % \
             dict(cls=self.__class__.__name__, data=repr(self.data))
 
 
-    def __nonzero__(self):
+    def __nonzero__(self): # Python 2
         return self.data is not None
 
-    __bool__ = __nonzero__
+    __bool__ = __nonzero__ # Python 3
+    # Called to implement truth value testing and 
+    # the built-in operation bool(); should return False or True
 
-    def __eq__(self, other):
+    def __eq__(self, other): # x==y calls x.__eq__(y)
+        # isinstance(object, type) 
+        # The isinstance() function returns True if the specified object is of the specified type
         if isinstance(other, tuple):
             return self.data == other
         else:
             return self.data == other.data
 
     def __hash__(self):
+        # id() method returns a unique integer (identity) of a passed argument object
         return id(self)
 
 
