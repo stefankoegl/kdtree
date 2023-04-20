@@ -199,14 +199,15 @@ class Node(object):
         # id() method returns a unique integer (identity) of a passed argument object
         return id(self)
 
-
+#  a Python decorator function named require_axis.
+# 
 def require_axis(f):
     """ Check if the object of the function has axis and sel_axis members """
 
     @wraps(f)
     def _wrapper(self, *args, **kwargs):
         if None in (self.axis, self.sel_axis):
-            raise ValueError('%(func_name) requires the node %(node)s '
+            raise ValueError('%(func_name)s requires the node %(node)s '
                     'to have an axis and a sel_axis function' %
                     dict(func_name=f.__name__, node=repr(self)))
 
@@ -231,6 +232,8 @@ class KDNode(Node):
         receives the axis of the parent node and returns the axis of the child
         node. """
         super(KDNode, self).__init__(data, left, right)
+        # The super() builtin returns a proxy object (temporary object of the superclass) 
+        # that allows us to access methods of the base class.
         self.axis = axis
         self.sel_axis = sel_axis
         self.dimensions = dimensions
