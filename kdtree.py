@@ -276,10 +276,10 @@ class KDNode(Node):
     def create_subnode(self, data):
         """ Creates a subnode for the current node """
 
-        return self.__class__(data,
+        return KDNode(data,
                 axis=self.sel_axis(self.axis),
                 sel_axis=self.sel_axis,
-                dimensions=self.dimensions)
+                dimensions=self.dimensions) # ??? self.__class__()
 
 
     @require_axis
