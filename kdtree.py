@@ -284,6 +284,7 @@ class KDNode(Node):
 
     @require_axis
     def find_replacement(self):
+        # Delete in kd-trees
         """ Finds a replacement for the current node
 
         The replacement is returned as a
@@ -587,8 +588,12 @@ class KDNode(Node):
 
         if not candidates:
             return None, None
-
+        
+        # max(iterable, *iterables, key, default)
+        # iterable - an iterable such as list, tuple, set, dictionary, etc.
+        # key (optional) - key function where the iterables are passed and comparison is performed based on its return value
         return sel_func(candidates, key=max_key)
+    
 
 
 
