@@ -279,7 +279,7 @@ class KDNode(Node):
         return KDNode(data,
                 axis=self.sel_axis(self.axis),
                 sel_axis=self.sel_axis,
-                dimensions=self.dimensions) # ??? self.__class__()
+                dimensions=self.dimensions) # 
 
 
     @require_axis
@@ -388,6 +388,7 @@ class KDNode(Node):
         if abs(left_height - right_height) > 1:
             return False
 
+        # The all() function returns True if all items in an iterable are true
         return all(c.is_balanced for c, _ in self.children)
 
 
