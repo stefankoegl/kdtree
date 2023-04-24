@@ -10,7 +10,6 @@ from __future__ import print_function
 
 import heapq
 import itertools
-import operator
 import math
 from collections import deque
 from functools import wraps
