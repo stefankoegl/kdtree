@@ -403,6 +403,8 @@ class KDNode(Node):
         Squared distance at the given axis between
         the current Node and the given point
         """
+        # math.pow(x, y)
+        # x : base    y : exponent
         return math.pow(self.data[axis] - point[axis], 2)
 
 
@@ -441,6 +443,10 @@ class KDNode(Node):
         results = []
 
         self._search_node(point, k, results, get_dist, itertools.count())
+        # itertools.count(start=0, step=1)
+        # start: Start of the sequence (defaults to 0)
+        # step: Difference between consecutive numbers (defaults to 1)
+        # Returns: Returns a count object whose .__next__() method returns consecutive values.
 
         # We sort the final result by the distance in the tuple
         # (<KdNode>, distance).
