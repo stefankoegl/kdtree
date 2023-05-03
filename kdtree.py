@@ -450,6 +450,9 @@ class KDNode(Node):
 
         # We sort the final result by the distance in the tuple
         # (<KdNode>, distance).
+
+        # sorted(iterable, key=key, reverse=reverse)
+        # reverse :  False will sort ascending, True will sort descending.
         return [(node, -d) for d, _, node in sorted(results, reverse=True)]
 
 
@@ -469,8 +472,12 @@ class KDNode(Node):
         if len(results) >= k:
             if -nodeDist > results[0][0]:
                 heapq.heapreplace(results, item)
+                # heapq.heapreplace(heap, item)
+                # Pop and return the smallest item from the heap, and also push the new item.
         else:
             heapq.heappush(results, item)
+            # heapq.heappush(heap, item)
+            # Push the value item onto the heap, maintaining the heap invariant.
         # get the splitting plane
         split_plane = self.data[self.axis]
         # get the squared distance between the point and the splitting plane
