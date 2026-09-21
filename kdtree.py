@@ -558,7 +558,7 @@ class KDNode(Node):
             data = node.data
             axis = node.axis
 
-            if data == None:
+            if data is None:
                 continue
 
             in_range = True
