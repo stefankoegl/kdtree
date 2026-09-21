@@ -422,9 +422,9 @@ class KDNode(Node):
 
         def get_dist(n, axis=None):
             if dist is None:
-                return n.dist(point, axis=None)
+                return n.dist(point, axis=axis)
             else:
-                return dist(n.data, point, axis=None)
+                return dist(n.data, point, axis=axis)
 
         results = []
 
