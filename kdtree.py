@@ -514,13 +514,17 @@ class KDNode(Node):
 
 
     @require_axis
-    def search_nn_dist(self, point, distance, best=None):
+    def search_nn_dist(self, point, distance):
         """
         Search the n nearest nodes of the given point which are within given
         distance
 
         point must be a location, not a node. A list containing the n nearest
         nodes to the point within the distance will be returned.
+        
+        distance is the threshold distance to filter nodes.
+        Note: KDNode.dist() returns squared distance, so the comparison will 
+        be done using squared_distance < distance.
         """
 
         results = []
