@@ -488,6 +488,8 @@ class KDNode(Node):
 
         The result is a (node, distance) tuple.
         """
+        if not self:
+            raise ValueError("tree is empty")
 
         return next(iter(self.search_knn(point, 1, dist)), None)
 

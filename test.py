@@ -228,6 +228,11 @@ class NearestNeighbor(unittest.TestCase):
         self.assertEqual(best_dist, dist)
 
 
+    def test_search_nn_empty_tree(self):
+        tree = kdtree.create(dimensions=2)
+        self.assertRaises(ValueError, tree.search_nn, (0, 0))
+
+
 
     def find_best(self, tree, point):
         best = None
