@@ -202,6 +202,27 @@ class NearestNeighbor(unittest.TestCase):
         self.assertEqual([(node.data, dist) for node, dist in result], expected)
         self.assertTrue(any(axis is not None for axis in axis_calls))
 
+    def test_search_knn_custom_dist_prunes(self):
+        points = [(x, y) for x in range(10) for y in range(10)]
+        tree = kdtree.create(points)
+        point = (2.25, 3.25)
+        full_dist_calls = []
+
+        def manhattan_dist(a, b, axis=None):
+            if axis is None:
+                full_dist_calls.append(a)
+                axes = range(len(a))
+            else:
+                axes = [axis]
+            return sum(abs(a[i] - b[i]) for i in axes)
+
+        result = tree.search_knn(point, 1, dist=manhattan_dist)
+
+        self.assertEqual(result[0][0].data, (2, 3))
+        self.assertEqual(result[0][1], 0.5)
+        # the splitting plane distance must allow skipping parts of the tree
+        self.assertLess(len(full_dist_calls), len(points))
+
     def test_search_nn(self, nodes=100):
         points = list(islice(random_points(), 0, nodes))
         tree = kdtree.create(points)

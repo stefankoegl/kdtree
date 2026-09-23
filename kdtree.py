@@ -412,7 +412,7 @@ class KDNode(Node):
         dist is a distance function, expecting two points and returning a
         distance value. dist should expect an optional `axis` parameter. If
         given, the distance on the specified axis should be calculated.
-        Distance values can be any comparable type.
+        Distance values must support comparison and unary negation.
 
         The result is an ordered list of (node, distance) tuples.
         """
@@ -454,9 +454,10 @@ class KDNode(Node):
         else:
             heapq.heappush(results, item)
 
+        # get the splitting plane
         split_plane = self.data[self.axis]
-        pt = KDNode(point, dimensions=self.dimensions)
-        plane_dist = get_dist(pt, axis=self.axis)
+        # get the distance between the point and the splitting plane
+        plane_dist = get_dist(self, axis=self.axis)
 
         # Search the side of the splitting plane that the point is in
         if point[self.axis] < split_plane:
@@ -489,7 +490,9 @@ class KDNode(Node):
         with this location will be returned (not its neighbor).
 
         dist is a distance function, expecting two points and returning a
-        distance value. Distance values can be any comparable type.
+        distance value. dist should expect an optional `axis` parameter. If
+        given, the distance on the specified axis should be calculated.
+        Distance values must support comparison and unary negation.
 
         The result is a (node, distance) tuple.
         """
