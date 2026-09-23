@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-"""A Python implemntation of a kd-tree
+"""A Python implementation of a kd-tree
 
 This package provides a simple implementation of a kd-tree in Python.
 https://en.wikipedia.org/wiki/K-d_tree
@@ -44,7 +44,7 @@ class Node(object):
         >>> Node( 1, left=Node(2) ).is_leaf
         False
         """
-        return (not self.data) or \
+        return (self.data is None) or \
                (all(not bool(c) for c, p in self.children))
 
 
@@ -175,10 +175,10 @@ class Node(object):
     __bool__ = __nonzero__
 
     def __eq__(self, other):
-        if isinstance(other, tuple):
-            return self.data == other
-        else:
+        if isinstance(other, Node):
             return self.data == other.data
+        else:
+            return self.data == other
 
     def __hash__(self):
         return id(self)
@@ -190,7 +190,7 @@ def require_axis(f):
     @wraps(f)
     def _wrapper(self, *args, **kwargs):
         if None in (self.axis, self.sel_axis):
-            raise ValueError('%(func_name) requires the node %(node)s '
+            raise ValueError('%(func_name)s requires the node %(node)s '
                     'to have an axis and a sel_axis function' %
                     dict(func_name=f.__name__, node=repr(self)))
 
@@ -229,10 +229,10 @@ class KDNode(Node):
         Users should call add() only to the topmost tree.
         """
 
+        check_dimensionality([point], dimensions=self.dimensions)
+
         current = self
         while True:
-            check_dimensionality([point], dimensions=current.dimensions)
-
             # Adding has hit an empty leaf-node, add here
             if current.data is None:
                 current.data = point
@@ -294,7 +294,7 @@ class KDNode(Node):
 
         If there are multiple points matching "point", only one is removed. The
         optional "node" parameter is used for checking the identity, once the
-        removeal candidate is decided."""
+        removal candidate is decided."""
 
         # Recursion has reached an empty leaf node, nothing here to delete
         if not self:
@@ -376,7 +376,9 @@ class KDNode(Node):
         Returns the (possibly new) root of the rebalanced tree
         """
 
-        return create([x.data for x in self.inorder()])
+        points = [x.data for x in self.inorder()]
+        return create(points, dimensions=self.dimensions, axis=self.axis,
+                      sel_axis=self.sel_axis)
 
 
     def axis_dist(self, point, axis):
@@ -516,12 +518,16 @@ class KDNode(Node):
 
         # get the splitting plane
         split_plane = self.data[self.axis]
+        # dist is compared against squared distances, so the distance to the
+        # splitting plane has to be squared as well
+        plane_dist = self.axis_dist(point, self.axis)
 
-        # Search the side of the splitting plane that the point is in
-        if point[self.axis] <= split_plane + dist:
+        # Search each side of the splitting plane that may contain points
+        # within the given distance
+        if point[self.axis] <= split_plane or plane_dist < dist:
             if self.left is not None:
                 self.left._search_nn_dist(point, dist, results, get_dist)
-        if point[self.axis] >= split_plane - dist:
+        if point[self.axis] >= split_plane or plane_dist < dist:
             if self.right is not None:
                 self.right._search_nn_dist(point, dist, results, get_dist)
 
@@ -668,8 +674,8 @@ def create(point_list=None, dimensions=None, axis=0, sel_axis=None):
     median = len(point_list) // 2
 
     loc   = point_list[median]
-    left  = create(point_list[:median], dimensions, sel_axis(axis))
-    right = create(point_list[median + 1:], dimensions, sel_axis(axis))
+    left  = create(point_list[:median], dimensions, sel_axis(axis), sel_axis)
+    right = create(point_list[median + 1:], dimensions, sel_axis(axis), sel_axis)
     return KDNode(loc, left, right, axis=axis, sel_axis=sel_axis, dimensions=dimensions)
 
 
