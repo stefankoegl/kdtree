@@ -6,3 +6,4 @@ MANIFEST
 doc/_build
 venv*
 kdtree.egg-info
+.DS_Store
