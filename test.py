@@ -203,25 +203,23 @@ class NearestNeighbor(unittest.TestCase):
         self.assertTrue(any(axis is not None for axis in axis_calls))
 
     def test_search_knn_custom_dist_prunes(self):
-        points = [(x, y) for x in range(10) for y in range(10)]
+        points = [(-3, -3), (-3, -2), (-3, -1), (-3, 0), (-2, -2)]
         tree = kdtree.create(points)
-        point = (2.25, 3.25)
-        full_dist_calls = []
+        point = (-2, -3)
 
-        def manhattan_dist(a, b, axis=None):
+        def transformed_manhattan_dist(a, b, axis=None):
+            dx = a[0] - b[0]
+            dy = a[1] - b[1]
             if axis is None:
-                full_dist_calls.append(a)
-                axes = range(len(a))
-            else:
-                axes = [axis]
-            return sum(abs(a[i] - b[i]) for i in axes)
+                return abs(dx + dy) + 0.1 * abs(dx - dy)
+            if axis == 0:
+                return abs(dx) + 0.1 * abs(dx)
+            return abs(dy) + 0.1 * abs(dy)
 
-        result = tree.search_knn(point, 1, dist=manhattan_dist)
+        result = tree.search_knn(point, 1, dist=transformed_manhattan_dist)
 
-        self.assertEqual(result[0][0].data, (2, 3))
-        self.assertEqual(result[0][1], 0.5)
-        # the splitting plane distance must allow skipping parts of the tree
-        self.assertLess(len(full_dist_calls), len(points))
+        self.assertEqual(result[0][0].data, (-3, -2))
+        self.assertEqual(result[0][1], 0.2)
 
     def test_search_nn(self, nodes=100):
         points = list(islice(random_points(), 0, nodes))

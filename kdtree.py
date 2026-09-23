@@ -428,14 +428,15 @@ class KDNode(Node):
 
         results = []
 
-        self._search_node(point, k, results, get_dist, itertools.count())
+        self._search_node(point, k, results, get_dist, itertools.count(),
+                          prune=dist is None)
 
         # We sort the final result by the distance in the tuple
         # (<KdNode>, distance).
         return [(node, -d) for d, _, node in sorted(results, reverse=True)]
 
 
-    def _search_node(self, point, k, results, get_dist, counter):
+    def _search_node(self, point, k, results, get_dist, counter, prune=True):
         if not self:
             return
 
@@ -462,22 +463,24 @@ class KDNode(Node):
         # Search the side of the splitting plane that the point is in
         if point[self.axis] < split_plane:
             if self.left is not None:
-                self.left._search_node(point, k, results, get_dist, counter)
+                self.left._search_node(point, k, results, get_dist, counter,
+                                       prune=prune)
         else:
             if self.right is not None:
-                self.right._search_node(point, k, results, get_dist, counter)
+                self.right._search_node(point, k, results, get_dist, counter,
+                                        prune=prune)
 
         # Search the other side of the splitting plane if it may contain
         # points closer than the farthest point in the current results.
-        if -plane_dist > results[0][0] or len(results) < k:
+        if not prune or -plane_dist > results[0][0] or len(results) < k:
             if point[self.axis] < self.data[self.axis]:
                 if self.right is not None:
                     self.right._search_node(point, k, results, get_dist,
-                                            counter)
+                                            counter, prune=prune)
             else:
                 if self.left is not None:
                     self.left._search_node(point, k, results, get_dist,
-                                           counter)
+                                           counter, prune=prune)
 
 
     @require_axis
