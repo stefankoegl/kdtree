@@ -150,6 +150,40 @@ class BalanceTests(unittest.TestCase):
 
 
 
+class SelAxisTests(unittest.TestCase):
+
+    def test_create_uses_sel_axis(self):
+        """ a custom sel_axis is used for the whole tree, not just the root """
+        points = [(i, 10 - i) for i in range(15)]
+        tree = kdtree.create(points, sel_axis=lambda axis: 1)
+        axes = [n.axis for n in tree.preorder()]
+        self.assertEqual(axes[0], 0)
+        self.assertTrue(all(axis == 1 for axis in axes[1:]))
+
+    def test_rebalance_keeps_sel_axis(self):
+        sel_axis = lambda axis: 1
+        tree = kdtree.create([(0, 0)], sel_axis=sel_axis)
+        for i in range(1, 10):
+            tree.add((i, i))
+        tree = tree.rebalance()
+        self.assertTrue(tree.sel_axis is sel_axis)
+        self.assertTrue(tree.is_valid())
+
+
+class MiscTests(unittest.TestCase):
+
+    def test_require_axis_message(self):
+        node = kdtree.KDNode((1, 2))
+        with self.assertRaises(ValueError) as cm:
+            node.add((1, 1))
+        self.assertIn('add requires the node', str(cm.exception))
+
+    def test_compare_with_non_node(self):
+        node = kdtree.KDNode((1, 2))
+        self.assertFalse(node == None)
+        self.assertTrue(node == (1, 2))
+
+
 class NearestNeighbor(unittest.TestCase):
 
     def test_search_knn(self):
@@ -373,6 +407,24 @@ class NearestNeighbor(unittest.TestCase):
                         self.assertTrue(pn.dist(point) < dist, '%s in %s but %s < %s' % (pn, nn, pn.dist(point), dist))
                     else:
                         self.assertTrue(pn.dist(point) >= dist, '%s not in %s but %s >= %s' % (pn, nn, pn.dist(point), dist))
+
+
+    def test_search_nn_dist_small_distance(self):
+        """ search_nn_dist() must not miss points if distance < 1
+
+        distance is a squared distance, but used to be compared against
+        unsquared distances to the splitting planes """
+
+        rand = random.Random(1)
+        for _ in range(100):
+            points = [(rand.random(), rand.random()) for _ in range(50)]
+            tree = kdtree.create(points)
+            point = (rand.random(), rand.random())
+            dist = 0.01
+
+            expected = sorted(p for p in points
+                              if sum((a - b) ** 2 for a, b in zip(p, point)) < dist)
+            self.assertEqual(sorted(tree.search_nn_dist(point, dist)), expected)
 
 
 class PointTypeTests(unittest.TestCase):
