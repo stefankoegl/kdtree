@@ -1,4 +1,4 @@
-A simple kd-tree in Python [![Build Status](https://travis-ci.org/stefankoegl/kdtree.png?branch=master)](https://travis-ci.org/stefankoegl/kdtree)
+A simple kd-tree in Python [![Tests](https://github.com/stefankoegl/kdtree/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/stefankoegl/kdtree/actions/workflows/tests.yml)
 ==========================
 
 The kdtree package can construct, modify and search
@@ -8,7 +8,7 @@ The kdtree package can construct, modify and search
 * Repository: https://github.com/stefankoegl/kdtree.git
 * Documentation: https://python-kdtree.readthedocs.org/
 * PyPI: https://pypi.python.org/pypi/kdtree
-* Travis-CI: https://travis-ci.org/stefankoegl/kdtree
+* GitHub Actions: https://github.com/stefankoegl/kdtree/actions
 * Coveralls: https://coveralls.io/r/stefankoegl/kdtree
 
 
