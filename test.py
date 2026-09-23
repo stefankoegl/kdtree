@@ -349,7 +349,14 @@ class PayloadTests(unittest.TestCase):
     """ test tree.add() with payload """
 
     def test_payload(self, nodes=100, dimensions=3):
-        points = list(islice(random_points(dimensions=dimensions), 0, nodes))
+        # points must be unique, otherwise search_nn() may return a
+        # duplicate node carrying another payload
+        points = set()
+        for p in random_points(dimensions=dimensions):
+            if len(points) == nodes:
+                break
+            points.add(p)
+        points = list(points)
         tree = kdtree.create(dimensions=dimensions)
 
         for i, p in enumerate(points):
