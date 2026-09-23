@@ -176,6 +176,51 @@ class NearestNeighbor(unittest.TestCase):
         self.assertEqual(result[1][1], all_dist[1][1])
         self.assertEqual(result[2][1], all_dist[2][1])
 
+    def test_search_knn_custom_dist(self):
+        points = [(0, 0), (2, 2), (5, 1), (9, 9), (4, 7), (3, 3)]
+        tree = kdtree.create(points)
+        point = (3, 4)
+        axis_calls = []
+
+        def manhattan_dist(a, b, axis=None):
+            if axis is None:
+                axes = range(len(a))
+            else:
+                axes = [axis]
+            return sum(abs(a[i] - b[i]) for i in axes)
+
+        def tracked_manhattan_dist(a, b, axis=None):
+            axis_calls.append(axis)
+            return manhattan_dist(a, b, axis=axis)
+
+        result = tree.search_knn(point, 3, dist=tracked_manhattan_dist)
+        expected = sorted(
+            [(p, manhattan_dist(p, point)) for p in points],
+            key=lambda n: n[1]
+        )[:3]
+
+        self.assertEqual([(node.data, dist) for node, dist in result], expected)
+        self.assertTrue(any(axis is not None for axis in axis_calls))
+
+    def test_search_knn_custom_dist_prunes(self):
+        points = [(-3, -3), (-3, -2), (-3, -1), (-3, 0), (-2, -2)]
+        tree = kdtree.create(points)
+        point = (-2, -3)
+
+        def transformed_manhattan_dist(a, b, axis=None):
+            dx = a[0] - b[0]
+            dy = a[1] - b[1]
+            if axis is None:
+                return abs(dx + dy) + 0.1 * abs(dx - dy)
+            if axis == 0:
+                return abs(dx) + 0.1 * abs(dx)
+            return abs(dy) + 0.1 * abs(dy)
+
+        result = tree.search_knn(point, 1, dist=transformed_manhattan_dist)
+
+        self.assertEqual(result[0][0].data, (-3, -2))
+        self.assertEqual(result[0][1], 0.2)
+
     def test_search_nn(self, nodes=100):
         points = list(islice(random_points(), 0, nodes))
         tree = kdtree.create(points)
