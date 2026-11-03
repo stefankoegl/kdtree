@@ -296,31 +296,47 @@ class KDNode(Node):
         optional "node" parameter is used for checking the identity, once the
         removeal candidate is decided."""
 
+        return self._remove_one(point, node)[0]
+
+
+    def _remove_one(self, point, node):
+        """ Removes at most one matching node from the (sub)tree
+
+        Returns a (new-subtree-root, removed) tuple, where removed indicates
+        whether a node has been removed. """
+
         # Recursion has reached an empty leaf node, nothing here to delete
         if not self:
-            return
+            return self, False
 
         # Recursion has reached the node to be deleted
         if self.should_remove(point, node):
-            return self._remove(point)
+            return self._remove(point), True
 
         # Remove direct subnode
         if self.left and self.left.should_remove(point, node):
             self.left = self.left._remove(point)
+            return self, True
 
         elif self.right and self.right.should_remove(point, node):
             self.right = self.right._remove(point)
+            return self, True
 
-        # Recurse to subtrees
+        # Recurse to subtrees. If the point lies on the splitting plane, both
+        # subtrees may contain it, but only one node must be removed
         if point[self.axis] <= self.data[self.axis]:
             if self.left:
-                self.left = self.left.remove(point, node)
+                self.left, removed = self.left._remove_one(point, node)
+                if removed:
+                    return self, True
 
         if point[self.axis] >= self.data[self.axis]:
             if self.right:
-                self.right = self.right.remove(point, node)
+                self.right, removed = self.right._remove_one(point, node)
+                if removed:
+                    return self, True
 
-        return self
+        return self, False
 
 
     @require_axis

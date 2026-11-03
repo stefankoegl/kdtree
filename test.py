@@ -74,6 +74,28 @@ class RemoveTest(unittest.TestCase):
         tree.remove( (1, 2) )
         self.assertFalse(bool(tree))
 
+    def test_remove_empty_tree_returns_root(self):
+        tree = kdtree.create(dimensions=2)
+        self.assertIs(tree.remove( (1, 2) ), tree)
+
+    def test_remove_duplicate_child_removes_one(self):
+        """ removing a direct child must not also remove its duplicate """
+        tree = kdtree.create([(0,), (0,), (0,), (1,)])
+        tree = tree.remove((0,))
+        tree = tree.remove((0,))
+        self.assertEqual(sorted(n.data for n in tree.inorder()),
+                         [(0,), (1,)])
+
+    def test_remove_point_on_splitting_plane_removes_one(self):
+        """ a point on the splitting plane may be in both subtrees, but must
+        only be removed once """
+        points = [(0, -1, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, -1, 0)]
+        tree = kdtree.create(points)
+        tree = tree.remove((0, 0, 0))
+        tree = tree.remove((0, -1, 0))
+        self.assertEqual(sorted(n.data for n in tree.inorder()),
+                         [(0, -1, 0), (0, 0, 0), (0, 0, 0)])
+
 
 class AddTest(unittest.TestCase):
 
