@@ -2,3 +2,6 @@ include AUTHORS
 include LICENSE
 include readme.md
 include test.py
+include kdtree.pyi
+include test_typing.py
+include typing_sample.py

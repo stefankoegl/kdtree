@@ -64,3 +64,36 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           parallel-finished: true
+
+  typing:
+    name: Type stubs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build mypy pyright setuptools typing_extensions
+
+      - name: Run typing tests
+        run: python -m unittest -v test_typing
+
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: Check type stubs of the installed wheel
+        # Run outside the source tree, so that the installed wheel (and not
+        # the files in the checkout) is picked up
+        run: |
+          python -m venv /tmp/wheel-env
+          /tmp/wheel-env/bin/pip install dist/*.whl
+          cp typing_sample.py /tmp/typing_sample.py
+          cd /tmp
+          python -m mypy --strict --python-executable /tmp/wheel-env/bin/python typing_sample.py
+          pyright --pythonpath /tmp/wheel-env/bin/python typing_sample.py

@@ -1,0 +1,181 @@
+""" Example usage of kdtree whose types are checked against kdtree.pyi
+
+The expected types are given as strings, because the classes in kdtree.py are
+not subscriptable at runtime (generics only exist in the stubs).
+
+This file is executed by test_typing.py (so it has to work at runtime) and
+type-checked with mypy and pyright (so the stubs have to describe the runtime
+behaviour correctly). """
+
+from __future__ import annotations
+
+import collections
+from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Tuple
+
+import kdtree
+
+if TYPE_CHECKING:
+    from typing_extensions import assert_type
+else:
+    def assert_type(value, _type):
+        return value
+
+
+class Item(object):
+    """ A point carrying a payload (see readme) """
+
+    def __init__(self, x: float, y: float, data: str) -> None:
+        self.coords = (x, y)
+        self.data = data
+
+    def __len__(self) -> int:
+        return len(self.coords)
+
+    def __getitem__(self, i: int) -> float:
+        return self.coords[i]
+
+
+def manhattan(a: Any, b: Any, axis: Optional[int] = None) -> int:
+    axes = range(len(a)) if axis is None else [axis]
+    return sum(abs(a[i] - b[i]) for i in axes)
+
+
+def check_create() -> None:
+    tree = kdtree.create([(1, 2), (3, 4), (5, 6)])
+    assert_type(tree, 'kdtree.KDNode[Tuple[int, int]]')
+
+    empty = kdtree.create(dimensions=2)
+    assert_type(empty, 'kdtree.KDNode[Any]')
+    assert not empty
+
+    empty2 = kdtree.create(None, 2)
+    assert_type(empty2, 'kdtree.KDNode[Any]')
+
+    custom_axis = kdtree.create([(1, 2), (3, 4)], axis=1,
+                                sel_axis=lambda axis: 1 - axis)
+    assert custom_axis.axis == 1
+
+    items = kdtree.create([Item(2, 3, 'First'), Item(3, 4, 'Second')])
+    assert_type(items, 'kdtree.KDNode[Item]')
+    assert items.data is not None
+    assert_type(items.data.data, 'str')
+
+
+def check_node_attributes() -> None:
+    tree = kdtree.create([(1, 2), (3, 4), (5, 6)])
+
+    assert_type(tree.data, 'Optional[Tuple[int, int]]')
+    assert_type(tree.left, 'Optional[kdtree.KDNode[Tuple[int, int]]]')
+    assert_type(tree.right, 'Optional[kdtree.KDNode[Tuple[int, int]]]')
+    assert_type(tree.axis, 'Optional[int]')
+    assert_type(tree.dimensions, 'Optional[int]')
+    assert_type(tree.is_leaf, 'bool')
+    assert_type(tree.is_balanced, 'bool')
+    assert_type(tree.height(), 'int')
+    assert_type(tree.is_valid(), 'bool')
+    assert_type(bool(tree), 'bool')
+
+    for child, pos in tree.children:
+        assert_type(child, 'kdtree.KDNode[Tuple[int, int]]')
+        assert_type(pos, 'int')
+        assert tree.get_child_pos(child) == pos
+
+    # detach and re-attach a subtree
+    subtree = tree.right
+    tree.right = None
+    tree.set_child(1, subtree)
+    assert tree.right is subtree
+
+
+def check_traversal() -> None:
+    tree = kdtree.create([(1, 2), (3, 4), (5, 6)])
+
+    assert_type(tree.inorder(), 'Iterator[kdtree.KDNode[Tuple[int, int]]]')
+    assert_type(tree.preorder(), 'Iterator[kdtree.KDNode[Tuple[int, int]]]')
+    assert_type(tree.postorder(), 'Iterator[kdtree.KDNode[Tuple[int, int]]]')
+
+    nodes = list(kdtree.level_order(tree))
+    assert_type(nodes, 'List[kdtree.KDNode[Tuple[int, int]]]')
+    assert len(nodes) == 3
+
+    plain = kdtree.Node(1, left=kdtree.Node(2))
+    assert_type(plain, 'kdtree.Node[int]')
+    assert_type(plain.data, 'Optional[int]')
+    assert [n.data for n in plain.inorder()] == [2, 1]
+
+
+def check_modification() -> None:
+    tree = kdtree.create([(1, 2), (3, 4), (5, 6)])
+
+    added = tree.add((7, 8))
+    assert_type(added, 'kdtree.KDNode[Tuple[int, int]]')
+    assert added.data == (7, 8)
+
+    new_root = tree.remove((7, 8))
+    assert_type(new_root, 'Optional[kdtree.KDNode[Tuple[int, int]]]')
+    assert new_root is not None
+
+    rebalanced = new_root.rebalance()
+    assert_type(rebalanced, 'kdtree.KDNode[Tuple[int, int]]')
+    assert rebalanced.is_balanced
+
+
+def check_search() -> None:
+    tree = kdtree.create([(1, 2), (3, 4), (5, 6)])
+
+    node, dist = tree.search_nn((1, 1))
+    assert_type(node, 'kdtree.KDNode[Tuple[int, int]]')
+    assert_type(dist, 'float')
+    assert node.data == (1, 2)
+
+    node2, dist2 = tree.search_nn((1, 1), dist=manhattan)
+    assert_type(dist2, 'int')
+    assert dist2 == 1
+
+    knn = tree.search_knn((1, 1), 2)
+    assert_type(knn, 'List[Tuple[kdtree.KDNode[Tuple[int, int]], float]]')
+    assert len(knn) == 2
+
+    knn_custom = tree.search_knn((1, 1), 2, dist=manhattan)
+    assert_type(knn_custom, 'List[Tuple[kdtree.KDNode[Tuple[int, int]], int]]')
+
+    knn_lambda = tree.search_knn((1, 1), 1,
+                                 dist=lambda a, b, axis=None: manhattan(a, b, axis))
+    assert len(knn_lambda) == 1
+
+    within = tree.search_nn_dist((1, 1), 20)
+    assert_type(within, 'List[Tuple[int, int]]')
+    assert sorted(within) == [(1, 2), (3, 4)]
+
+    in_range = tree.range_search((0, 0), (4, 4))
+    assert_type(in_range, 'List[kdtree.KDNode[Tuple[int, int]]]')
+    assert len(in_range) == 2
+
+    assert_type(tree.dist((0, 0)), 'float')
+    assert_type(tree.axis_dist((0, 0), 0), 'float')
+
+
+def check_mixed_point_types() -> None:
+    Point = collections.namedtuple('Point', 'x y z')
+    tree = kdtree.create([(2, 3, 4), [4, 5, 6], Point(5, 3, 2)])
+    res, dist = tree.search_nn((1, 2, 3))
+    assert res == kdtree.KDNode((2, 3, 4))
+
+
+def check_misc() -> None:
+    assert_type(kdtree.__version__, 'str')
+    assert_type(kdtree.check_dimensionality([(1, 2), (3, 4)]), 'int')
+
+
+def main() -> None:
+    check_create()
+    check_node_attributes()
+    check_traversal()
+    check_modification()
+    check_search()
+    check_mixed_point_types()
+    check_misc()
+
+
+if __name__ == '__main__':
+    main()
