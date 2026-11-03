@@ -169,6 +169,13 @@ class SelAxisTests(unittest.TestCase):
         self.assertTrue(tree.sel_axis is sel_axis)
         self.assertTrue(tree.is_valid())
 
+    def test_rebalance_standalone_node(self):
+        """ a node without axis and sel_axis can still be rebalanced """
+        tree = kdtree.KDNode((1, 2)).rebalance()
+        self.assertEqual(tree.data, (1, 2))
+        self.assertEqual(tree.axis, 0)
+        self.assertTrue(tree.is_valid())
+
 
 class MiscTests(unittest.TestCase):
 

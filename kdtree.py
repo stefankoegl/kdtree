@@ -377,7 +377,8 @@ class KDNode(Node):
         """
 
         points = [x.data for x in self.inorder()]
-        return create(points, dimensions=self.dimensions, axis=self.axis,
+        axis = self.axis if self.axis is not None else 0
+        return create(points, dimensions=self.dimensions, axis=axis,
                       sel_axis=self.sel_axis)
 
 
