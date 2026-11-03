@@ -10,6 +10,7 @@ behaviour correctly). """
 from __future__ import annotations
 
 import collections
+import decimal
 from typing import Any, Iterator, List, Optional, Tuple, assert_type
 
 import kdtree
@@ -113,6 +114,17 @@ def check_modification() -> None:
     assert_type(rebalanced, 'kdtree.KDNode[Tuple[int, int]]')
     assert rebalanced.is_balanced
 
+    # creates an empty child node
+    empty_child = tree.create_subnode(None)
+    assert_type(empty_child, 'kdtree.KDNode[Tuple[int, int]]')
+    assert not empty_child
+
+    # a single node has no replacement
+    replacement, parent = kdtree.create([(1, 2)]).find_replacement()
+    assert_type(replacement, 'Optional[kdtree.KDNode[Tuple[int, int]]]')
+    assert_type(parent, 'kdtree.KDNode[Tuple[int, int]]')
+    assert replacement is None
+
 
 def check_search() -> None:
     tree = kdtree.create([(1, 2), (3, 4), (5, 6)])
@@ -136,6 +148,14 @@ def check_search() -> None:
     knn_lambda = tree.search_knn((1, 1), 1,
                                  dist=lambda a, b, axis=None: manhattan(a, b, axis))
     assert len(knn_lambda) == 1
+
+    # any negatable and comparable type can be used as a distance
+    def decimal_dist(a: Any, b: Any, axis: Optional[int] = None) -> decimal.Decimal:
+        return decimal.Decimal(manhattan(a, b, axis))
+
+    node3, dist3 = tree.search_nn((1, 1), dist=decimal_dist)
+    assert_type(dist3, 'decimal.Decimal')
+    assert dist3 == 1
 
     within = tree.search_nn_dist((1, 1), 20)
     assert_type(within, 'List[Tuple[int, int]]')

@@ -208,6 +208,53 @@ class TypingSampleTests(unittest.TestCase):
         typing_sample.main()
 
 
+# Code that fails at runtime and therefore has to be rejected by the type
+# checkers: {name: source}
+INVALID_USAGE = {
+    'k is an int': (
+        'tree.search_knn((1, 2), "three")\n'
+    ),
+    'distance can not be negated': (
+        'def dist(a: object, b: object, axis: int | None = None) -> str:\n'
+        '    return "far"\n'
+        'tree.search_knn((1, 2), 1, dist=dist)\n'
+    ),
+    'distance can not be None': (
+        'tree.search_nn((1, 2), dist=lambda a, b, axis=None: None)\n'
+    ),
+    'replacement of a single node is None': (
+        'replacement, parent = tree.find_replacement()\n'
+        'replacement.data\n'
+    ),
+}
+
+INVALID_USAGE_HEADER = (
+    'import kdtree\n'
+    'tree = kdtree.create([(1, 2)])\n'
+)
+
+
+def write_invalid_usage(directory):
+    """ Writes each INVALID_USAGE snippet to its own file """
+    paths = {}
+    for i, (name, source) in enumerate(sorted(INVALID_USAGE.items())):
+        path = os.path.join(directory, 'invalid_%d.py' % i)
+        with open(path, 'w') as f:
+            f.write(INVALID_USAGE_HEADER + source)
+        paths[name] = path
+    return paths
+
+
+class InvalidUsageTests(unittest.TestCase):
+    """ The rejected snippets have to fail at runtime """
+
+    def test_invalid_usage_fails_at_runtime(self):
+        for name, source in INVALID_USAGE.items():
+            with self.subTest(name):
+                with self.assertRaises((TypeError, AttributeError)):
+                    exec(INVALID_USAGE_HEADER + source, {})
+
+
 def run_checker(args):
     proc = subprocess.run(args, cwd=HERE, stdout=subprocess.PIPE,
                           stderr=subprocess.STDOUT, universal_newlines=True)
@@ -234,15 +281,15 @@ class MypyTests(unittest.TestCase):
         self.assertEqual(code, 0, out)
 
     def test_detects_errors(self):
-        """ makes sure the checks above are not vacuous """
-        code, out = run_checker([
-            sys.executable, '-m', 'mypy', '--no-incremental', '-c',
-            'import kdtree\n'
-            'tree = kdtree.create([(1, 2)])\n'
-            'tree.search_knn((1, 2), "three")\n'
-        ])
-        self.assertNotEqual(code, 0, out)
-        self.assertIn('search_knn', out)
+        """ code that fails at runtime is rejected """
+        with tempfile.TemporaryDirectory() as directory:
+            for name, path in write_invalid_usage(directory).items():
+                with self.subTest(name):
+                    code, out = run_checker([
+                        sys.executable, '-m', 'mypy', '--no-incremental',
+                        '--cache-dir', os.devnull, path,
+                    ])
+                    self.assertNotEqual(code, 0, out)
 
 
 @unittest.skipUnless(shutil.which('pyright'), 'pyright is not installed')
@@ -252,6 +299,16 @@ class PyrightTests(unittest.TestCase):
         code, out = run_checker(['pyright', '--pythonpath', sys.executable,
                                  SAMPLE, STUB])
         self.assertEqual(code, 0, out)
+
+    def test_detects_errors(self):
+        """ code that fails at runtime is rejected """
+        with tempfile.TemporaryDirectory() as directory:
+            for name, path in write_invalid_usage(directory).items():
+                with self.subTest(name):
+                    code, out = run_checker([
+                        'pyright', '--pythonpath', sys.executable, path,
+                    ])
+                    self.assertNotEqual(code, 0, out)
 
 
 @unittest.skipUnless(has_module('setuptools'), 'setuptools is not installed')
