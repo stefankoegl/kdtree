@@ -55,7 +55,7 @@ Usage
 
     # Find the nearest node to the location (1, 2, 3)
     >>> tree.search_nn( (1, 2, 3) )
-    <KDNode - (2, 3, 4)>
+    (<KDNode - (2, 3, 4)>, 3.0)
 
     # Add a point to make the tree more interesting
     >>> tree.add( (10, 2, 1) )
@@ -73,7 +73,7 @@ Usage
     # Take the right subtree of the root
     >>> subtree = tree.right
 
-    # and detatch it
+    # and detach it
     >>> tree.right = None
     >>> kdtree.visualize(tree)
 
