@@ -157,6 +157,14 @@ def check_search() -> None:
     assert_type(dist3, 'decimal.Decimal')
     assert dist3 == 1
 
+    # axis is always passed as keyword, so it may be keyword-only
+    def kw_only_dist(a: Any, b: Any, *, axis: Optional[int]) -> int:
+        return manhattan(a, b, axis)
+
+    node4, dist4 = tree.search_nn((1, 1), dist=kw_only_dist)
+    assert_type(dist4, 'int')
+    assert dist4 == 1
+
     within = tree.search_nn_dist((1, 1), 20)
     assert_type(within, 'List[Tuple[int, int]]')
     assert sorted(within) == [(1, 2), (3, 4)]
@@ -179,6 +187,14 @@ def check_mixed_point_types() -> None:
 def check_misc() -> None:
     assert_type(kdtree.__version__, 'str')
     assert_type(kdtree.check_dimensionality([(1, 2), (3, 4)]), 'int')
+    assert kdtree.check_dimensionality({(1, 2), (3, 4)}, dimensions=2) == 2
+
+
+def check_unordered_points() -> None:
+    # sets of points can be used if the dimensions are given
+    tree = kdtree.create({(1, 2), (3, 4)}, dimensions=2)
+    assert_type(tree, 'kdtree.KDNode[Tuple[int, int]]')
+    assert tree.is_valid()
 
 
 def main() -> None:
@@ -189,6 +205,7 @@ def main() -> None:
     check_search()
     check_mixed_point_types()
     check_misc()
+    check_unordered_points()
 
 
 if __name__ == '__main__':

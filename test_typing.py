@@ -222,6 +222,20 @@ INVALID_USAGE = {
     'distance can not be None': (
         'tree.search_nn((1, 2), dist=lambda a, b, axis=None: None)\n'
     ),
+    'dimensions of a set can not be inferred': (
+        'kdtree.create({(1, 2), (3, 4)})\n'
+    ),
+    'dimensions of a set can not be checked': (
+        'kdtree.check_dimensionality({(1, 2), (3, 4)})\n'
+    ),
+    'points can not be an iterator': (
+        'kdtree.create(iter([(1, 2), (3, 4)]), dimensions=2)\n'
+    ),
+    'distance function without axis': (
+        'def dist(a: object, b: object) -> int:\n'
+        '    return 0\n'
+        'tree.search_nn((1, 2), dist=dist)\n'
+    ),
     'replacement of a single node is None': (
         'replacement, parent = tree.find_replacement()\n'
         'replacement.data\n'
@@ -251,7 +265,7 @@ class InvalidUsageTests(unittest.TestCase):
     def test_invalid_usage_fails_at_runtime(self):
         for name, source in INVALID_USAGE.items():
             with self.subTest(name):
-                with self.assertRaises((TypeError, AttributeError)):
+                with self.assertRaises((TypeError, AttributeError, IndexError)):
                     exec(INVALID_USAGE_HEADER + source, {})
 
 

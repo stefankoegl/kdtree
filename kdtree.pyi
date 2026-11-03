@@ -4,7 +4,7 @@ kdtree is distributed as a single-file module. Type information is therefore
 shipped as this stub file, which is installed next to kdtree.py.
 """
 
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Sequence
 from typing import Any, Generic, ParamSpec, Protocol, Self, TypeVar, overload
 
 __author__: str
@@ -35,9 +35,9 @@ class _Distance(Protocol):
     def __gt__(self, other: Any, /) -> bool: ...
 
 class _DistFunc(Protocol[_D_co]):
-    """A distance function, called as dist(a, b) or dist(a, b, axis=axis)"""
+    """A distance function, always called as dist(a, b, axis=axis)"""
 
-    def __call__(self, a: Any, b: Any, /, axis: int | None = None) -> _D_co: ...
+    def __call__(self, a: Any, b: Any, /, *, axis: int | None) -> _D_co: ...
 
 class Node(Generic[_T]):
     data: _T | None
@@ -132,9 +132,21 @@ def create(
     axis: int = 0,
     sel_axis: Callable[[int], int] | None = None,
 ) -> KDNode[_P]: ...
+@overload
+def create(
+    # without dimensions, they are taken from point_list[0]. Iterators are
+    # not supported, as the dimensionality check consumes them
+    point_list: Collection[_P],
+    dimensions: int,
+    axis: int = 0,
+    sel_axis: Callable[[int], int] | None = None,
+) -> KDNode[_P]: ...
+@overload
 def check_dimensionality(
     point_list: Sequence[_Point], dimensions: int | None = None
 ) -> int: ...
+@overload
+def check_dimensionality(point_list: Iterable[_Point], dimensions: int) -> int: ...
 def level_order(tree: _N, include_all: bool = False) -> Iterator[_N]: ...
 def visualize(
     tree: Node[Any],
