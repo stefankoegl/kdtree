@@ -21,6 +21,9 @@ class _Point(Protocol):
 
 _T = TypeVar("_T")
 _P = TypeVar("_P", bound=_Point)
+_Q = TypeVar("_Q", bound=_Point)
+_P_contra = TypeVar("_P_contra", contravariant=True)
+_Q_contra = TypeVar("_Q_contra", contravariant=True)
 _D_co = TypeVar("_D_co", covariant=True)
 _N = TypeVar("_N", bound=Node[Any])
 _D = TypeVar("_D", bound=_Distance)
@@ -34,10 +37,14 @@ class _Distance(Protocol):
     def __lt__(self, other: Any, /) -> bool: ...
     def __gt__(self, other: Any, /) -> bool: ...
 
-class _DistFunc(Protocol[_D_co]):
-    """A distance function, always called as dist(a, b, axis=axis)"""
+class _DistFunc(Protocol[_P_contra, _Q_contra, _D_co]):
+    """A distance function, always called as dist(a, b, axis=axis)
 
-    def __call__(self, a: Any, b: Any, /, *, axis: int | None) -> _D_co: ...
+    a is a point stored in the tree, b is the point that is searched for."""
+
+    def __call__(
+        self, a: _P_contra, b: _Q_contra, /, *, axis: int | None
+    ) -> _D_co: ...
 
 class Node(Generic[_T]):
     data: _T | None
@@ -95,12 +102,14 @@ class KDNode(Node[_P]):
     ) -> list[tuple[Self, float]]: ...
     @overload
     def search_knn(
-        self, point: _Point, k: int, dist: _DistFunc[_D]
+        self, point: _Q, k: int, dist: _DistFunc[_P, _Q, _D]
     ) -> list[tuple[Self, _D]]: ...
     @overload
     def search_nn(self, point: _Point, dist: None = None) -> tuple[Self, float]: ...
     @overload
-    def search_nn(self, point: _Point, dist: _DistFunc[_D]) -> tuple[Self, _D]: ...
+    def search_nn(
+        self, point: _Q, dist: _DistFunc[_P, _Q, _D]
+    ) -> tuple[Self, _D]: ...
     def search_nn_dist(self, point: _Point, distance: float) -> list[_P]: ...
     def range_search(self, top_left: _Point, bottom_right: _Point) -> list[Self]: ...
     def is_valid(self) -> bool: ...

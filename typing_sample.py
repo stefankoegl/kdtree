@@ -168,6 +168,18 @@ def check_search() -> None:
     assert_type(dist4, 'int')
     assert dist4 == 1
 
+    # distance functions can be typed for the stored and the query points
+    items = kdtree.create([Item(2, 3, 'First'), Item(3, 4, 'Second')])
+
+    def item_dist(a: Item, b: Tuple[float, float], *,
+                  axis: Optional[int]) -> float:
+        return manhattan(a.coords, b, axis)
+
+    item_node, item_d = items.search_nn((1.0, 2.0), dist=item_dist)
+    assert_type(item_node, 'kdtree.KDNode[Item]')
+    assert_type(item_d, 'float')
+    assert item_node.data is not None and item_node.data.data == 'First'
+
     within = tree.search_nn_dist((1, 1), 20)
     assert_type(within, 'List[Tuple[int, int]]')
     assert sorted(within) == [(1, 2), (3, 4)]

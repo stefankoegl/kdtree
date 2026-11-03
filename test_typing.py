@@ -236,6 +236,17 @@ INVALID_USAGE = {
         '    return 0\n'
         'tree.search_nn((1, 2), dist=dist)\n'
     ),
+    'distance function for other point types': (
+        'class Item:\n'
+        '    coords = (0, 0)\n'
+        '    def __len__(self) -> int:\n'
+        '        return 2\n'
+        '    def __getitem__(self, i: int) -> int:\n'
+        '        return self.coords[i]\n'
+        'def dist(a: Item, b: Item, *, axis: int | None) -> int:\n'
+        '    return a.coords[0] - b.coords[0]\n'
+        'tree.search_nn((1, 2), dist=dist)\n'
+    ),
     'replacement of a single node is None': (
         'replacement, parent = tree.find_replacement()\n'
         'replacement.data\n'
