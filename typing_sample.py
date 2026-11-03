@@ -10,15 +10,9 @@ behaviour correctly). """
 from __future__ import annotations
 
 import collections
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Tuple
+from typing import Any, Iterator, List, Optional, Tuple, assert_type
 
 import kdtree
-
-if TYPE_CHECKING:
-    from typing_extensions import assert_type
-else:
-    def assert_type(value, _type):
-        return value
 
 
 class Item(object):

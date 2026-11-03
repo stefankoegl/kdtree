@@ -3,4 +3,3 @@ coverage
 wheel
 mypy
 pyright
-typing_extensions

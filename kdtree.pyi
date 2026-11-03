@@ -5,9 +5,7 @@ shipped as this stub file, which is installed next to kdtree.py.
 """
 
 from collections.abc import Callable, Iterator, Sequence
-from typing import Any, Generic, Protocol, TypeVar, overload
-
-from typing_extensions import ParamSpec, Self
+from typing import Any, Generic, ParamSpec, Protocol, Self, TypeVar, overload
 
 __author__: str
 __version__: str

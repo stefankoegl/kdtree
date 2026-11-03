@@ -79,7 +79,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install build mypy pyright setuptools typing_extensions
+          python -m pip install build mypy pyright setuptools
 
       - name: Run typing tests
         run: python -m unittest -v test_typing
