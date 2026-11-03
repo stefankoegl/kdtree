@@ -8,6 +8,8 @@ import logging
 import unittest
 import doctest
 import collections
+import contextlib
+import io
 from itertools import islice
 
 # import after starting coverage, to ensure that import-time code is covered
@@ -74,6 +76,27 @@ class RemoveTest(unittest.TestCase):
         tree.remove( (1, 2) )
         self.assertFalse(bool(tree))
 
+    def test_remove_with_left_replacement(self):
+        """ removing a node without a right subtree uses the left one """
+        tree = kdtree.create([(2, 2)])
+        tree.add((1, 1))
+        tree.add((1, 3))
+        self.assertFalse(tree.right)
+
+        tree = tree.remove((2, 2))
+        self.assertTrue(tree.is_valid())
+        self.assertEqual(sorted(n.data for n in tree.inorder()),
+                         [(1, 1), (1, 3)])
+
+    def test_remove_only_matching_node(self):
+        """ the node parameter restricts removal to that specific node """
+        tree = kdtree.create([(1, 1)])
+        other = kdtree.KDNode((1, 1))
+        self.assertFalse(tree.should_remove((1, 1), other))
+        self.assertTrue(tree.should_remove((1, 1), tree))
+        self.assertTrue(tree.should_remove((1, 1), None))
+        self.assertFalse(tree.should_remove((2, 2), None))
+
 
 class AddTest(unittest.TestCase):
 
@@ -101,6 +124,17 @@ class AddTest(unittest.TestCase):
 
 
 class InvalidTreeTests(unittest.TestCase):
+
+    def test_missing_axis(self):
+        """ Methods requiring an axis fail on nodes without one """
+        node = kdtree.KDNode((1, 2))
+        with self.assertRaises(ValueError) as cm:
+            node.add((3, 4))
+        self.assertIn('add requires the node', str(cm.exception))
+
+    def test_create_without_points_or_dimensions(self):
+        self.assertRaises(ValueError, kdtree.create)
+        self.assertRaises(ValueError, kdtree.create, [])
 
 
     def test_invalid_child(self):
@@ -133,6 +167,100 @@ class TreeTraversals(unittest.TestCase):
 
         self.assertEqual(inorder_len, preorder_len)
         self.assertEqual(preorder_len, postorder_len)
+
+    def test_empty_tree(self):
+        tree = kdtree.create(dimensions=2)
+        self.assertEqual(list(tree.inorder()), [])
+        self.assertEqual(list(tree.preorder()), [])
+        self.assertEqual(list(tree.postorder()), [])
+
+    def test_order(self):
+        tree = kdtree.create([(2, 2), (1, 1), (3, 3)])
+        self.assertEqual([n.data for n in tree.preorder()],
+                         [(2, 2), (1, 1), (3, 3)])
+        self.assertEqual([n.data for n in tree.inorder()],
+                         [(1, 1), (2, 2), (3, 3)])
+        self.assertEqual([n.data for n in tree.postorder()],
+                         [(1, 1), (3, 3), (2, 2)])
+
+    def test_level_order(self):
+        tree = kdtree.create([(2, 2), (1, 1), (3, 3), (0, 0)])
+        self.assertEqual([n.data for n in kdtree.level_order(tree)],
+                         [(2, 2), (1, 1), (3, 3), (0, 0)])
+
+        # include_all fills up missing nodes with empty dummy nodes
+        nodes = list(islice(kdtree.level_order(tree, include_all=True), 7))
+        self.assertEqual([n.data for n in nodes],
+                         [(2, 2), (1, 1), (3, 3), (0, 0), None, None, None])
+
+
+class NodeTests(unittest.TestCase):
+
+    def test_set_child(self):
+        node = kdtree.Node(1)
+        left, right = kdtree.Node(2), kdtree.Node(3)
+        node.set_child(0, left)
+        node.set_child(1, right)
+        self.assertIs(node.left, left)
+        self.assertIs(node.right, right)
+
+    def test_get_child_pos(self):
+        left, right = kdtree.Node((1,)), kdtree.Node((3,))
+        node = kdtree.Node((2,), left, right)
+        self.assertEqual(node.get_child_pos(left), 0)
+        self.assertEqual(node.get_child_pos(right), 1)
+        self.assertIsNone(node.get_child_pos(kdtree.Node((4,))))
+
+    def test_eq(self):
+        self.assertEqual(kdtree.Node((1, 2)), (1, 2))
+        self.assertEqual(kdtree.Node((1, 2)), kdtree.Node((1, 2)))
+        self.assertNotEqual(kdtree.Node((1, 2)), kdtree.Node((2, 1)))
+
+    def test_hash(self):
+        a, b = kdtree.Node((1, 2)), kdtree.Node((1, 2))
+        self.assertEqual(hash(a), hash(a))
+        self.assertEqual(len({a, b}), 2)
+
+    def test_repr(self):
+        self.assertEqual(repr(kdtree.KDNode((1, 2))), '<KDNode - (1, 2)>')
+
+    def test_extreme_child_empty(self):
+        tree = kdtree.create(dimensions=2)
+        self.assertEqual(tree.extreme_child(max, 0), (None, None))
+
+    def test_dist_axis(self):
+        node = kdtree.create([(1, 2)])
+        self.assertEqual(node.dist((4, 6)), 25)
+        self.assertEqual(node.dist((4, 6), axis=0), 9)
+        self.assertEqual(node.dist((4, 6), axis=1), 16)
+
+
+class VisualizeTests(unittest.TestCase):
+
+    def visualize(self, tree, **kwargs):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            kdtree.visualize(tree, **kwargs)
+        return out.getvalue()
+
+    def test_visualize(self):
+        tree = kdtree.create([(2, 2), (1, 1), (3, 3), (0, 0)])
+        lines = [l.strip() for l in self.visualize(tree).splitlines()]
+        lines = [l for l in lines if l]
+        self.assertEqual(len(lines), 3)
+        self.assertEqual(lines[0], '(2, 2)')
+        self.assertEqual(lines[1].split(), ['(1,', '1)', '(3,', '3)'])
+        self.assertEqual(lines[2].split(), ['(0,', '0)'])
+
+    def test_visualize_max_level(self):
+        tree = kdtree.create([(2, 2), (1, 1), (3, 3), (0, 0)])
+        lines = [l for l in self.visualize(tree, max_level=1).splitlines()
+                 if l.strip()]
+        self.assertEqual(len(lines), 2)
+
+    def test_visualize_empty(self):
+        tree = kdtree.create(dimensions=2)
+        self.assertEqual(self.visualize(tree).strip(), '')
 
 
 
@@ -273,6 +401,38 @@ class NearestNeighbor(unittest.TestCase):
         self.assertEqual(best_dist, dist)
 
 
+    def test_search_knn_invalid_k(self):
+        tree = kdtree.create([(1, 2)])
+        self.assertRaises(ValueError, tree.search_knn, (0, 0), 0)
+
+    def test_search_knn_other_side(self):
+        """ the far side of a splitting plane is searched if necessary """
+        # trees built with add() have None instead of empty child nodes
+
+        # the root has only a left child, the query point is on its left
+        tree = kdtree.create(dimensions=2)
+        tree.add((5, 0))
+        tree.add((1, 0))
+        self.assertIsNone(tree.right)
+        result = tree.search_knn((4, 0), 2)
+        self.assertEqual([(n.data, d) for n, d in result],
+                         [((5, 0), 1), ((1, 0), 9)])
+
+        # the root has only a right child, the query point is on its right
+        tree = kdtree.create(dimensions=2)
+        tree.add((1, 0))
+        tree.add((5, 0))
+        self.assertIsNone(tree.left)
+        result = tree.search_knn((2, 0), 2)
+        self.assertEqual([(n.data, d) for n, d in result],
+                         [((1, 0), 1), ((5, 0), 9)])
+
+        # the query point is in the right half, but the left half is closer
+        tree = kdtree.create([(1, 0)])
+        tree.add((0, 0))
+        result = tree.search_knn((1.4, 0), 2)
+        self.assertEqual([n.data for n, _ in result], [(1, 0), (0, 0)])
+
     def test_search_nn_empty_tree(self):
         tree = kdtree.create(dimensions=2)
         self.assertRaises(ValueError, tree.search_nn, (0, 0))
@@ -354,6 +514,18 @@ class NearestNeighbor(unittest.TestCase):
                     msg = '{} not in {} but {} >= {}'.format(
                         pn, nn, pn.dist(point), dist)
                     self.assertTrue(pn.dist(point) >= dist, msg)
+
+    def test_search_nn_dist_single_node(self):
+        tree = kdtree.create([(1, 1)])
+        self.assertEqual(tree.search_nn_dist((1, 1), 1), [(1, 1)])
+        self.assertEqual(tree.search_nn_dist((5, 5), 1), [])
+
+        # a tree built with add() has None instead of empty child nodes
+        tree = kdtree.create(dimensions=2)
+        tree.add((1, 1))
+        self.assertIsNone(tree.left)
+        self.assertIsNone(tree.right)
+        self.assertEqual(tree.search_nn_dist((1, 1), 1), [(1, 1)])
 
     def test_search_nn_dist_random(self):
 
@@ -452,6 +624,31 @@ class RangeTests(unittest.TestCase):
         unknown_range.sort()
 
         self.assertEqual(known_range, unknown_range)
+
+
+    def test_invalid_rectangle(self):
+        tree = kdtree.create([(1, 2), (3, 4)])
+        # wrong dimensionality
+        self.assertRaises(ValueError, tree.range_search, (0, 0, 0), (5, 5, 5))
+        self.assertRaises(ValueError, tree.range_search, (0, 0), (5, 5, 5))
+        # top_left larger than bottom_right
+        self.assertRaises(ValueError, tree.range_search, (5, 0), (0, 5))
+        self.assertRaises(ValueError, tree.range_search, (0, 5), (5, 0))
+
+    def test_empty_tree(self):
+        tree = kdtree.create(dimensions=2)
+        self.assertEqual(tree.range_search((0, 0), (5, 5)), [])
+
+    def test_bounds_inclusive(self):
+        points = [(0, 0), (1, 1), (2, 2), (3, 3)]
+        tree = kdtree.create(points)
+        result = sorted(n.data for n in tree.range_search((1, 1), (2, 2)))
+        self.assertEqual(result, [(1, 1), (2, 2)])
+
+
+def load_tests(loader, tests, ignore):
+    tests.addTests(doctest.DocTestSuite(kdtree))
+    return tests
 
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
