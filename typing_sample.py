@@ -107,8 +107,11 @@ def check_modification() -> None:
     assert added.data == (7, 8)
 
     new_root = tree.remove((7, 8))
-    assert_type(new_root, 'Optional[kdtree.KDNode[Tuple[int, int]]]')
-    assert new_root is not None
+    assert_type(new_root, 'kdtree.KDNode[Tuple[int, int]]')
+
+    # removing from an empty tree returns the (empty) tree
+    empty = kdtree.create(dimensions=2)
+    assert empty.remove((1, 2)) is empty
 
     rebalanced = new_root.rebalance()
     assert_type(rebalanced, 'kdtree.KDNode[Tuple[int, int]]')
