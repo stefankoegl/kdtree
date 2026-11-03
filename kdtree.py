@@ -190,7 +190,7 @@ def require_axis(f):
     @wraps(f)
     def _wrapper(self, *args, **kwargs):
         if None in (self.axis, self.sel_axis):
-            raise ValueError('%(func_name) requires the node %(node)s '
+            raise ValueError('%(func_name)s requires the node %(node)s '
                     'to have an axis and a sel_axis function' %
                     dict(func_name=f.__name__, node=repr(self)))
 
@@ -713,7 +713,8 @@ def visualize(tree, max_level=100, node_width=10, left_padding=5):
     in_level  = 0
     level     = 0
 
-    for node in level_order(tree, include_all=True):
+    # level_order() is infinite with include_all; the loop ends with break
+    for node in level_order(tree, include_all=True):  # pragma: no branch
 
         if in_level == 0:
             print()
