@@ -122,6 +122,21 @@ Usage
 
           (2, 3, 4)
 
+### Type hints
+
+Type information is provided in the stub file `kdtree.pyi`, which is installed
+next to `kdtree.py` and, for mypy, as the stub-only package `kdtree-stubs`.
+Trees are generic in the type of their points:
+
+```python
+tree = kdtree.create([(1, 2), (3, 4)])  # KDNode[tuple[int, int]]
+node, dist = tree.search_nn((1, 1))     # KDNode[tuple[int, int]], float
+```
+
+The classes are only generic for type checkers; at runtime write
+annotations like `kdtree.KDNode[tuple[int, int]]` as strings or use
+`from __future__ import annotations`.
+
 ### Adding a payload
 
 Indexing a dict by a pair of floats is not a good idea, since there might be unexpected precision errors.
