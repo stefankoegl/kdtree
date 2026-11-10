@@ -7,8 +7,9 @@ import os.path
 
 dirname = os.path.dirname(os.path.abspath(__file__))
 filename = os.path.join(dirname, 'kdtree.py')
-src = open(filename).read()
-metadata = dict(re.findall("__([a-z]+)__ = u?'([^']+)'", src))
+with open(filename, encoding='utf-8') as f:
+    src = f.read()
+metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", src))
 docstrings = re.findall('"""([^"]+)"""', src)
 
 PACKAGE = 'kdtree'
@@ -87,9 +88,6 @@ setup(name=PACKAGE,
       url=WEBSITE,
       py_modules=MODULES,
       cmdclass={'build_py': build_py_with_stubs},
-      download_url='http://pypi.python.org/packages/source/' + \
-        PACKAGE[0] + '/' + PACKAGE + '/' + \
-        PACKAGE + '-' + VERSION + '.tar.gz',
       classifiers=CLASSIFIERS,
       python_requires='>=3.11',
 )
