@@ -12,7 +12,7 @@ from functools import wraps
 
 <<<<<<< HEAD
 __author__ = 'Stefan Kögl <stefan@skoegl.net>'
-__version__ = '1.0'
+__version__ = '1.1'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
 
