@@ -15,6 +15,8 @@ The kdtree package can construct, modify and search
 Usage
 -----
 
+<!-- usage-start: this example is run as a doctest by test.py -->
+
     >>> import kdtree
 
     # Create an empty tree by specifying the number of
@@ -108,11 +110,14 @@ Usage
     False
     >>> kdtree.visualize(tree)
 
-                                       [4, 5, 6]
+                                             [4, 5, 6]
 
-                   (2, 3, 4)                           Point(x=5, y=3, z=2)
-                                                   (10, 2, 1)
-                                                           (6, 1, 5)
+                         (2, 3, 4)                           Point(x=5, y=3, z=2)
+
+                                                         (10, 2, 1)
+
+                                                                 (6, 1, 5)
+
     # rebalance the tree
     >>> tree = tree.rebalance()
     >>> tree.is_balanced
@@ -121,9 +126,11 @@ Usage
 
                     Point(x=5, y=3, z=2)
 
-               [4, 5, 6]            (6, 1, 5)
+               [4, 5, 6]            (10, 2, 1)
 
-          (2, 3, 4)
+          (2, 3, 4)             (6, 1, 5)
+
+<!-- usage-end -->
 
 ### Type hints
 
