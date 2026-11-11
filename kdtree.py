@@ -10,9 +10,8 @@ import math
 from collections import deque
 from functools import wraps
 
-<<<<<<< HEAD
 __author__ = 'Stefan Kögl <stefan@skoegl.net>'
-__version__ = '1.1'
+__version__ = '1.1.1'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
 
