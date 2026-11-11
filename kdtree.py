@@ -1,28 +1,23 @@
-# -*- coding: utf-8 -*-
-
-
 """A Python implementation of a kd-tree
 
 This package provides a simple implementation of a kd-tree in Python.
 https://en.wikipedia.org/wiki/K-d_tree
 """
 
-from __future__ import print_function
-
 import heapq
 import itertools
-import operator
 import math
 from collections import deque
 from functools import wraps
 
-__author__ = u'Stefan Kögl <stefan@skoegl.net>'
+<<<<<<< HEAD
+__author__ = 'Stefan Kögl <stefan@skoegl.net>'
 __version__ = '1.0'
 __website__ = 'https://github.com/stefankoegl/kdtree'
 __license__ = 'ISC license'
 
 
-class Node(object):
+class Node:
     """ A Node in a kd-tree
 
     A tree is represented by its root node, and every node represents
@@ -214,7 +209,7 @@ class KDNode(Node):
         sel_axis(axis) is used when creating subnodes of the current node. It
         receives the axis of the parent node and returns the axis of the child
         node. """
-        super(KDNode, self).__init__(data, left, right)
+        super().__init__(data, left, right)
         self.axis = axis
         self.sel_axis = sel_axis
         self.dimensions = dimensions
@@ -416,17 +411,18 @@ class KDNode(Node):
         else:
             axes = [axis]
 
-        return sum([self.axis_dist(point, i) for i in axes])
+        return sum(self.axis_dist(point, i) for i in axes)
 
 
+    @require_axis
     def search_knn(self, point, k, dist=None):
         """ Return the k nearest neighbors of point and their distances
 
         point must be an actual point, not a node.
 
-        k is the number of results to return. The actual results can be less
-        (if there aren't more nodes to return) or more in case of equal
-        distances.
+        k is the number of results to return. Fewer results are returned if
+        the tree contains less than k nodes. If several nodes have the same
+        distance, it is not specified which of them are returned.
 
         dist is a distance function, expecting two points and returning a
         distance value. dist should expect an optional `axis` parameter. If
@@ -492,7 +488,7 @@ class KDNode(Node):
         # Search the other side of the splitting plane if it may contain
         # points closer than the farthest point in the current results.
         if not prune or -plane_dist > results[0][0] or len(results) < k:
-            if point[self.axis] < self.data[self.axis]:
+            if point[self.axis] < split_plane:
                 if self.right is not None:
                     self.right._search_node(point, k, results, get_dist,
                                             counter, prune=prune)
@@ -555,11 +551,12 @@ class KDNode(Node):
         Search the n nearest nodes of the given point which are within given
         distance
 
-        point must be a location, not a node. A list containing the n nearest
-        nodes to the point within the distance will be returned.
-        
+        point must be a location, not a node. A list containing the points
+        (not the nodes) within the distance will be returned, in no particular
+        order.
+
         distance is the threshold distance to filter nodes.
-        Note: KDNode.dist() returns squared distance, so the comparison will 
+        Note: KDNode.dist() returns squared distance, so the comparison will
         be done using squared_distance < distance.
         """
 
@@ -592,7 +589,7 @@ class KDNode(Node):
         results = []
         stack = [self]
 
-        while(stack):
+        while stack:
             node = stack.pop()
 
             data = node.data
@@ -601,11 +598,8 @@ class KDNode(Node):
             if data is None:
                 continue
 
-            in_range = True
-            for d in range(0, len(data)):
-                in_range &= (data[d] >= top_left[d]) and (data[d] <= bottom_right[d])
-
-            if in_range:
+            if all(lo <= x <= hi
+                   for lo, x, hi in zip(top_left, data, bottom_right)):
                 results.append(node)
 
             if data[axis] >= top_left[axis] and node.left:
@@ -617,20 +611,37 @@ class KDNode(Node):
 
     @require_axis
     def is_valid(self):
-        """ Checks recursively if the tree is valid
+        """ Checks if the tree is valid
 
-        It is valid if each node splits correctly """
+        It is valid if each node splits correctly, ie all points in its left
+        subtree are less than or equal to and all points in its right subtree
+        are greater than or equal to the node's point on the node's axis. """
 
-        if not self:
-            return True
+        # (node, {axis: lower bound}, {axis: upper bound})
+        stack = [(self, {}, {})]
+        while stack:
+            node, lower, upper = stack.pop()
+            if not node:
+                continue
 
-        if self.left and self.data[self.axis] < self.left.data[self.axis]:
-            return False
+            for axis, bound in lower.items():
+                if node.data[axis] < bound:
+                    return False
 
-        if self.right and self.data[self.axis] > self.right.data[self.axis]:
-            return False
+            for axis, bound in upper.items():
+                if node.data[axis] > bound:
+                    return False
 
-        return all(c.is_valid() for c, _ in self.children) or self.is_leaf
+            # the node's point lies within the bounds, so its split value
+            # is always the tighter bound for its children
+            split = {node.axis: node.data[node.axis]}
+            for child, pos in node.children:
+                if pos == 0:
+                    stack.append((child, lower, {**upper, **split}))
+                else:
+                    stack.append((child, {**lower, **split}, upper))
+
+        return True
 
 
     def extreme_child(self, sel_func, axis):
@@ -697,6 +708,11 @@ def create(point_list=None, dimensions=None, axis=0, sel_axis=None):
 
 
 def check_dimensionality(point_list, dimensions=None):
+    """ Checks that all points have the same number of dimensions
+
+    If dimensions is not given, it is taken from the first point. Returns the
+    number of dimensions. Raises ValueError otherwise. """
+
     dimensions = dimensions or len(point_list[0])
     for p in point_list:
         if len(p) != dimensions:

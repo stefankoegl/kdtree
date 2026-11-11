@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 
-from __future__ import absolute_import
-
-import sys
 import random
-import logging
 import unittest
 import doctest
 import collections
 import contextlib
 import io
+import os
+import textwrap
 from itertools import islice
 
 # import after starting coverage, to ensure that import-time code is covered
@@ -154,6 +152,10 @@ class InvalidTreeTests(unittest.TestCase):
             node.add((3, 4))
         self.assertIn('add requires the node', str(cm.exception))
 
+        with self.assertRaises(ValueError) as cm:
+            node.search_knn((3, 4), 1)
+        self.assertIn('search_knn requires the node', str(cm.exception))
+
     def test_create_without_points_or_dimensions(self):
         self.assertRaises(ValueError, kdtree.create)
         self.assertRaises(ValueError, kdtree.create, [])
@@ -169,6 +171,20 @@ class InvalidTreeTests(unittest.TestCase):
 
         tree = kdtree.create([(4, 1)])
         tree.right=child
+        self.assertFalse(tree.is_valid())
+
+    def test_invalid_grandchild(self):
+        """ is_valid() checks all descendants, not only direct children """
+        tree = kdtree.create([(5, 5), (3, 3), (7, 7)])
+        # (9, 4) is valid below (3, 3), which splits on y, but lies on the
+        # wrong side of the root, which splits on x
+        tree.left.add((9, 4))
+        self.assertTrue(tree.left.is_valid())
+        self.assertFalse(tree.is_valid())
+
+        tree = kdtree.create([(5, 5), (3, 3), (7, 7)])
+        tree.right.add((1, 6))
+        self.assertTrue(tree.right.is_valid())
         self.assertFalse(tree.is_valid())
 
 
@@ -328,12 +344,6 @@ class SelAxisTests(unittest.TestCase):
 
 
 class MiscTests(unittest.TestCase):
-
-    def test_require_axis_message(self):
-        node = kdtree.KDNode((1, 2))
-        with self.assertRaises(ValueError) as cm:
-            node.add((1, 1))
-        self.assertIn('add requires the node', str(cm.exception))
 
     def test_compare_with_non_node(self):
         node = kdtree.KDNode((1, 2))
@@ -679,7 +689,7 @@ class RangeTests(unittest.TestCase):
         known_range.sort()
 
         tree = kdtree.create(points)
-        tree.rebalance()
+        tree = tree.rebalance()
 
         unknown_range = [x.data for x in tree.range_search(top_left, bottom_right)]
         unknown_range.sort()
@@ -699,7 +709,7 @@ class RangeTests(unittest.TestCase):
         known_range.sort()
 
         tree = kdtree.create(points)
-        tree.rebalance()
+        tree = tree.rebalance()
 
         unknown_range = [x.data for x in tree.range_search(top_left, bottom_right)]
         unknown_range.sort()
@@ -727,13 +737,91 @@ class RangeTests(unittest.TestCase):
         self.assertEqual(result, [(1, 1), (2, 2)])
 
 
+README = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readme.md')
+
+
+def read_readme():
+    with open(README, encoding='utf-8') as f:
+        return f.read()
+
+
+def readme_usage():
+    """ The usage example of the readme (between the usage-start and
+    usage-end markers) as doctest source """
+
+    text = read_readme()
+    start = text.index('-->', text.index('<!-- usage-start')) + len('-->')
+    end = text.index('<!-- usage-end -->')
+    lines = textwrap.dedent(text[start:end]).splitlines()
+    return '\n'.join(mark_blank_output_lines(lines)) + '\n'
+
+
+def mark_blank_output_lines(lines):
+    """ Marks blank lines within the output of an example as <BLANKLINE>
+
+    visualize() prints blank lines, which would otherwise end the expected
+    output of an example. A blank line belongs to the output if it follows an
+    example and more output (not a new example or a comment) follows it. """
+
+    in_example = False
+    for i, line in enumerate(lines):
+        if line.startswith('>>>'):
+            in_example = True
+        elif line.startswith('#'):
+            in_example = False
+        elif not line.strip() and in_example:
+            following = next((l for l in lines[i + 1:] if l.strip()), '')
+            if following and not following.startswith(('>>>', '#')):
+                line = '<BLANKLINE>'
+        yield line
+
+
+class BlankLineInsensitiveChecker(doctest.OutputChecker):
+    """ Compares outputs ignoring blank lines and trailing whitespace, as
+    the readme does not reproduce those exactly """
+
+    @staticmethod
+    def normalize(text):
+        lines = text.replace('<BLANKLINE>', '').splitlines()
+        return '\n'.join(l.rstrip() for l in lines if l.strip()) + '\n'
+
+    def check_output(self, want, got, optionflags):
+        return super().check_output(self.normalize(want), self.normalize(got),
+                                    optionflags)
+
+
+class ReadmeTests(unittest.TestCase):
+    """ The examples in the readme work as shown """
+
+    def test_usage(self):
+        source = readme_usage()
+        test = doctest.DocTestParser().get_doctest(
+            source, {}, 'readme.md', README, 0)
+        runner = doctest.DocTestRunner(checker=BlankLineInsensitiveChecker())
+        out = io.StringIO()
+        failed, attempted = runner.run(test, out=out.write)
+        self.assertEqual(failed, 0, out.getvalue())
+        # every example has been run, none was swallowed as expected output
+        self.assertEqual(attempted, source.count('\n>>> '))
+
+    def test_payload(self):
+        before, after = read_readme().split('\nPrints:\n')
+        code = before.rsplit('```python\n', 1)[1].split('```')[0]
+        expected = after.split('```\n', 1)[1].split('```')[0]
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            exec(code, {})
+        self.assertEqual(out.getvalue(), expected)
+
+
 def load_tests(loader, tests, ignore):
     tests.addTests(doctest.DocTestSuite(kdtree))
     return tests
 
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
-    points = list(islice(random_points(), 0, nodes))
+    points = list(islice(random_points(dimensions, minval, maxval), 0, nodes))
     tree = kdtree.create(points)
     return tree
 

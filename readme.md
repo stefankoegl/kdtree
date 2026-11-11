@@ -2,18 +2,20 @@ A simple kd-tree in Python [![Tests](https://github.com/stefankoegl/kdtree/actio
 ==========================
 
 The kdtree package can construct, modify and search
-[kd-trees](http://en.wikipedia.org/wiki/Kd-tree).
+[kd-trees](https://en.wikipedia.org/wiki/K-d_tree).
 
 * Website: https://github.com/stefankoegl/kdtree
 * Repository: https://github.com/stefankoegl/kdtree.git
-* Documentation: https://python-kdtree.readthedocs.org/
-* PyPI: https://pypi.python.org/pypi/kdtree
+* Documentation: https://python-kdtree.readthedocs.io/
+* PyPI: https://pypi.org/project/kdtree/
 * GitHub Actions: https://github.com/stefankoegl/kdtree/actions
-* Coveralls: https://coveralls.io/r/stefankoegl/kdtree
+* Coveralls: https://coveralls.io/github/stefankoegl/kdtree
 
 
 Usage
 -----
+
+<!-- usage-start: this example is run as a doctest by test.py -->
 
     >>> import kdtree
 
@@ -39,8 +41,9 @@ Usage
     >>> tree
     <KDNode - [4, 5, 6]>
 
-    # Adds a tuple to the tree
+    # Adds a tuple to the tree and returns its node
     >>> tree.add( (5, 4, 3) )
+    <KDNode - (5, 4, 3)>
 
     # Removes the previously added point and returns the new root
     >>> tree = tree.remove( (5, 4, 3) )
@@ -59,6 +62,7 @@ Usage
 
     # Add a point to make the tree more interesting
     >>> tree.add( (10, 2, 1) )
+    <KDNode - (10, 2, 1)>
 
     # Visualize the Tree
     >>> kdtree.visualize(tree)
@@ -101,15 +105,19 @@ Usage
     >>> tree.is_balanced
     True
     >>> tree.add( (6, 1, 5) )
+    <KDNode - (6, 1, 5)>
     >>> tree.is_balanced
     False
     >>> kdtree.visualize(tree)
 
-                                       [4, 5, 6]
+                                             [4, 5, 6]
 
-                   (2, 3, 4)                           Point(x=5, y=3, z=2)
-                                                   (10, 2, 1)
-                                                           (6, 1, 5)
+                         (2, 3, 4)                           Point(x=5, y=3, z=2)
+
+                                                         (10, 2, 1)
+
+                                                                 (6, 1, 5)
+
     # rebalance the tree
     >>> tree = tree.rebalance()
     >>> tree.is_balanced
@@ -118,9 +126,11 @@ Usage
 
                     Point(x=5, y=3, z=2)
 
-               [4, 5, 6]            (6, 1, 5)
+               [4, 5, 6]            (10, 2, 1)
 
-          (2, 3, 4)
+          (2, 3, 4)             (6, 1, 5)
+
+<!-- usage-end -->
 
 ### Type hints
 
