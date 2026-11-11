@@ -53,9 +53,9 @@ def tree_points(tree):
 def assert_strictly_valid(tc, tree):
     """ Checks the kd-tree invariant for *all* descendants of every node
 
-    KDNode.is_valid() only compares nodes to their direct children; this
-    check verifies that every point in a left subtree is <= the splitting
-    value and every point in a right subtree is >= it. """
+    This is a brute-force counterpart to KDNode.is_valid(): every point in a
+    left subtree is <= the splitting value and every point in a right subtree
+    is >= it. """
 
     for node in tree.preorder():
         if node.data is None:

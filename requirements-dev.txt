@@ -1,6 +1,5 @@
 build
 coverage
-wheel
 mypy
 pyright
 hypothesis

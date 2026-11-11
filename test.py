@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import absolute_import
-
-import sys
 import random
-import logging
 import unittest
 import doctest
 import collections
@@ -154,6 +150,10 @@ class InvalidTreeTests(unittest.TestCase):
             node.add((3, 4))
         self.assertIn('add requires the node', str(cm.exception))
 
+        with self.assertRaises(ValueError) as cm:
+            node.search_knn((3, 4), 1)
+        self.assertIn('search_knn requires the node', str(cm.exception))
+
     def test_create_without_points_or_dimensions(self):
         self.assertRaises(ValueError, kdtree.create)
         self.assertRaises(ValueError, kdtree.create, [])
@@ -169,6 +169,20 @@ class InvalidTreeTests(unittest.TestCase):
 
         tree = kdtree.create([(4, 1)])
         tree.right=child
+        self.assertFalse(tree.is_valid())
+
+    def test_invalid_grandchild(self):
+        """ is_valid() checks all descendants, not only direct children """
+        tree = kdtree.create([(5, 5), (3, 3), (7, 7)])
+        # (9, 4) is valid below (3, 3), which splits on y, but lies on the
+        # wrong side of the root, which splits on x
+        tree.left.add((9, 4))
+        self.assertTrue(tree.left.is_valid())
+        self.assertFalse(tree.is_valid())
+
+        tree = kdtree.create([(5, 5), (3, 3), (7, 7)])
+        tree.right.add((1, 6))
+        self.assertTrue(tree.right.is_valid())
         self.assertFalse(tree.is_valid())
 
 
@@ -328,12 +342,6 @@ class SelAxisTests(unittest.TestCase):
 
 
 class MiscTests(unittest.TestCase):
-
-    def test_require_axis_message(self):
-        node = kdtree.KDNode((1, 2))
-        with self.assertRaises(ValueError) as cm:
-            node.add((1, 1))
-        self.assertIn('add requires the node', str(cm.exception))
 
     def test_compare_with_non_node(self):
         node = kdtree.KDNode((1, 2))
@@ -679,7 +687,7 @@ class RangeTests(unittest.TestCase):
         known_range.sort()
 
         tree = kdtree.create(points)
-        tree.rebalance()
+        tree = tree.rebalance()
 
         unknown_range = [x.data for x in tree.range_search(top_left, bottom_right)]
         unknown_range.sort()
@@ -699,7 +707,7 @@ class RangeTests(unittest.TestCase):
         known_range.sort()
 
         tree = kdtree.create(points)
-        tree.rebalance()
+        tree = tree.rebalance()
 
         unknown_range = [x.data for x in tree.range_search(top_left, bottom_right)]
         unknown_range.sort()
@@ -733,7 +741,7 @@ def load_tests(loader, tests, ignore):
 
 
 def random_tree(nodes=20, dimensions=3, minval=0, maxval=100):
-    points = list(islice(random_points(), 0, nodes))
+    points = list(islice(random_points(dimensions, minval, maxval), 0, nodes))
     tree = kdtree.create(points)
     return tree
 
