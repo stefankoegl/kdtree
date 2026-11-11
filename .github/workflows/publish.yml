@@ -12,8 +12,9 @@ name: Publish
 
 on:
   push:
+    # only release tags such as v0.17 or v1.0
     tags:
-      - '*'
+      - 'v[0-9]*'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +31,15 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
+      - name: Check that the tag matches the version
+        if: github.ref_type == 'tag'
+        run: |
+          version=$(python -c 'import kdtree; print(kdtree.__version__)')
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version"
+            exit 1
+          fi
 
       - name: Install build dependencies
         run: |
