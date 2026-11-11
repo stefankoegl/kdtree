@@ -3,9 +3,11 @@
 """ Tests for the type stubs in kdtree.pyi
 
 The tests that only need the standard library always run. The tests that
-need mypy, pyright or setuptools are skipped if those are not installed. """
+need mypy, pyright, build or setuptools are skipped if those are not
+installed. """
 
 import ast
+import email
 import importlib.util
 import inspect
 import os
@@ -14,6 +16,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 
 import kdtree
 import typing_sample
@@ -336,33 +339,45 @@ class PyrightTests(unittest.TestCase):
                     self.assertNotEqual(code, 0, out)
 
 
-@unittest.skipUnless(has_module('setuptools'), 'setuptools is not installed')
+@unittest.skipUnless(has_module('build') and has_module('setuptools'),
+                     'build or setuptools is not installed')
 class PackagingTests(unittest.TestCase):
     """ The stub has to be installed along with the module """
 
-    def test_build_installs_stubs(self):
-        with tempfile.TemporaryDirectory() as build_lib:
-            code, out = run_checker([
-                sys.executable, os.path.join(HERE, 'setup.py'), '-q',
-                'build_py', '--build-lib', build_lib,
-            ])
-            self.assertEqual(code, 0, out)
+    def build_wheel(self, outdir):
+        """ Builds an sdist and from it a wheel, as for a release. Uses the
+        installed setuptools, so no network access is needed. """
+        code, out = run_checker([
+            sys.executable, '-m', 'build', '--no-isolation',
+            '--outdir', outdir, HERE,
+        ])
+        self.assertEqual(code, 0, out)
+        wheels = [f for f in os.listdir(outdir) if f.endswith('.whl')]
+        self.assertEqual(len(wheels), 1, wheels)
+        return zipfile.ZipFile(os.path.join(outdir, wheels[0]))
 
-            with open(STUB) as f:
-                stub = f.read()
+    def test_wheel(self):
+        with tempfile.TemporaryDirectory() as outdir:
+            with self.build_wheel(outdir) as wheel:
+                with open(STUB) as f:
+                    stub = f.read()
 
-            self.assertTrue(
-                os.path.exists(os.path.join(build_lib, 'kdtree.py')))
+                self.assertIn('kdtree.py', wheel.namelist())
 
-            # next to the module, for type checkers that support this
-            # (eg pyright)
-            with open(os.path.join(build_lib, 'kdtree.pyi')) as f:
-                self.assertEqual(f.read(), stub)
+                # next to the module, for type checkers that support this
+                # (eg pyright)
+                self.assertEqual(wheel.read('kdtree.pyi').decode(), stub)
 
-            # as a PEP 561 stub-only package, for mypy
-            with open(os.path.join(build_lib, 'kdtree-stubs',
-                                   '__init__.pyi')) as f:
-                self.assertEqual(f.read(), stub)
+                # as a PEP 561 stub-only package, for mypy
+                self.assertEqual(
+                    wheel.read('kdtree-stubs/__init__.pyi').decode(), stub)
+
+                # the version is read from kdtree.py
+                metadata = next(n for n in wheel.namelist()
+                                if n.endswith('.dist-info/METADATA'))
+                metadata = email.message_from_bytes(wheel.read(metadata))
+                self.assertEqual(metadata['Version'], kdtree.__version__)
+                self.assertEqual(metadata['License-Expression'], 'ISC')
 
 
 if __name__ == '__main__':

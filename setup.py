@@ -1,28 +1,23 @@
-#!/usr/bin/env python
+""" Installs the type stubs along with the module
+
+All metadata is in pyproject.toml. This file only exists because
+setuptools has no declarative way to install the stubs: kdtree is a
+single-file module, so PEP 561's py.typed marker can not be used. Instead
+each stub is installed twice: next to its module (picked up by e.g. pyright
+and PyCharm) and as a stub-only package <module>-stubs (picked up by mypy).
+setuptools only installs .py files for py-modules, so the stubs are copied
+explicitly. """
+
+import os.path
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
-import re
-import os.path
 
 dirname = os.path.dirname(os.path.abspath(__file__))
-filename = os.path.join(dirname, 'kdtree.py')
-with open(filename, encoding='utf-8') as f:
-    src = f.read()
-metadata = dict(re.findall("__([a-z]+)__ = '([^']+)'", src))
-docstrings = re.findall('"""([^"]+)"""', src)
 
-PACKAGE = 'kdtree'
+MODULES = ('kdtree',)
 
-MODULES = (
-        PACKAGE,
-)
-
-# Type stubs (PEP 484) for the modules. kdtree is a single-file module, so
-# PEP 561's py.typed marker can not be used. Instead each stub is installed
-# twice: next to its module (picked up by e.g. pyright and PyCharm) and as a
-# stub-only package <module>-stubs (picked up by mypy). setuptools only
-# installs .py files for py_modules, so the stubs are copied explicitly.
+# {installed path: source path}
 STUBS = {}
 for module in MODULES:
     STUBS[module + '.pyi'] = module + '.pyi'
@@ -44,52 +39,4 @@ class build_py_with_stubs(build_py):
         return outputs + [os.path.join(self.build_lib, t) for t in STUBS]
 
 
-AUTHOR_EMAIL = metadata['author']
-VERSION = metadata['version']
-WEBSITE = metadata['website']
-LICENSE = metadata['license']
-# the first line of the module docstring
-DESCRIPTION = docstrings[0].strip().splitlines()[0]
-
-# the readme is shown on PyPI
-with open(os.path.join(dirname, 'readme.md'), encoding='utf-8') as f:
-    LONG_DESCRIPTION = f.read()
-
-# Extract name and e-mail ("Firstname Lastname <mail@example.org>")
-AUTHOR, EMAIL = re.match(r'(.*) <(.*)>', AUTHOR_EMAIL).groups()
-
-CLASSIFIERS = [
-    'Development Status :: 5 - Production/Stable',
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: ISC License (ISCL)',
-    'Operating System :: OS Independent',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3.13',
-    'Programming Language :: Python :: 3.14',
-    'Programming Language :: Python :: 3.15',
-    'Programming Language :: Python :: Implementation :: CPython',
-    'Programming Language :: Python :: Implementation :: PyPy',
-    'Topic :: Software Development :: Libraries',
-    'Topic :: Utilities',
-    'Typing :: Typed',
-]
-
-
-setup(name=PACKAGE,
-      version=VERSION,
-      description=DESCRIPTION,
-      long_description=LONG_DESCRIPTION,
-      long_description_content_type='text/markdown',
-      author=AUTHOR,
-      author_email=EMAIL,
-      license=LICENSE,
-      url=WEBSITE,
-      py_modules=MODULES,
-      cmdclass={'build_py': build_py_with_stubs},
-      classifiers=CLASSIFIERS,
-      python_requires='>=3.11',
-)
+setup(cmdclass={'build_py': build_py_with_stubs})
