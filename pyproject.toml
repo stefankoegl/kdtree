@@ -1,0 +1,55 @@
+[build-system]
+# 77 is the first version that supports license expressions (PEP 639)
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kdtree"
+dynamic = ["version"]
+description = "A Python implementation of a kd-tree"
+readme = "readme.md"
+authors = [
+    { name = "Stefan Kögl", email = "stefan@skoegl.net" },
+]
+license = "ISC"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/stefankoegl/kdtree"
+Documentation = "https://python-kdtree.readthedocs.io/"
+Repository = "https://github.com/stefankoegl/kdtree.git"
+Issues = "https://github.com/stefankoegl/kdtree/issues"
+
+[tool.setuptools]
+py-modules = ["kdtree"]
+
+[tool.setuptools.dynamic]
+# read statically from kdtree.py, without importing it
+version = { attr = "kdtree.__version__" }
+
+[tool.coverage.run]
+branch = true
+source = ["kdtree"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 100
